@@ -8,7 +8,7 @@ token: string = input("Enter bot token: ")
 
 
 async def hello(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(f'Hello {update.effective_user.first_name}')
+    await update.message.reply_text(f'Hello {update.effective_user.username}')
 
 
 app = ApplicationBuilder().token(token).build()
