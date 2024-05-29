@@ -25,6 +25,30 @@ async def run_new(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         message=update.message.text
     ))
 
+async def run_reg(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(auto_reg_system.handle_reg(
+        username=update.effective_user.username,
+        message=update.message.text
+    ))
+
+async def run_reserve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(auto_reg_system.handle_reserve(
+        username=update.effective_user.username,
+        message=update.message.text
+    ))
+
+async def run_dereg(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(auto_reg_system.handle_dereg(
+        username=update.effective_user.username,
+        message=update.message.text
+    ))
+
+async def run_admin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(auto_reg_system.handle_admin(
+        username=update.effective_user.username,
+        message=update.message.text
+    ))
+
 # /new: renew booking (beginning of the week), require admin privilege
 # /rec: recall booking (when error happens, use this to recally by copying), require admin privilege
 # /reg: register slot, for any user
@@ -36,5 +60,9 @@ app = ApplicationBuilder().token(token).build()
 app.add_handler(CommandHandler("hello", run_hello))
 app.add_handler(CommandHandler("retrieve", run_retrieve))
 app.add_handler(CommandHandler("new", run_new))
+app.add_handler(CommandHandler("reg", run_reg))
+app.add_handler(CommandHandler("reserve", run_reserve))
+app.add_handler(CommandHandler("dereg", run_dereg))
+app.add_handler(CommandHandler("admin", run_admin))
 
 app.run_polling()

@@ -1,7 +1,7 @@
 import string
 
 
-class NameNotFoundException:
+class NameNotFoundException(Exception):
 
     def __init__(self):
         self._message: string = "Name not found!"

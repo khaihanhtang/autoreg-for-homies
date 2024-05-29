@@ -1,4 +1,8 @@
 import string
+
+from .command_handler.handler_dereg import DeregHandler
+from .command_handler.handler_reg import RegHandler
+from .command_handler.handler_reserve import ReserveHandler
 from .data_structure.registration_data import RegistrationData
 from .data_structure.admin_manager import AdminManager
 from .command_handler.handler_new import NewHandler
@@ -20,12 +24,12 @@ class AutoRegistrationSystem:
             for slot_label, slot_data in datevenue_data.items():
                 res += f"[{slot_label}] {slot_data.slot_name}, {Term.NUM_PLAYERS} {slot_data.max_num_players}\n"
                 for i in range(slot_data.max_num_players):
-                    res += f"\t{i + 1}."
+                    res += f"   {i + 1}."
                     if i < len(slot_data.players):
-                        res += f" {slot_data.players[i]}"
+                        res += f"     {slot_data.players[i]}"
                     res += "\n"
                 for name in slot_data.reservations:
-                    res += f"\t{i + 1}. {name}\n"
+                    res += f"   {Term.RESERVATION}. {name}\n"
         return res
 
     def handle_new(self, username: string, message: string) -> string:
@@ -39,8 +43,35 @@ class AutoRegistrationSystem:
             message = StringParser.remove_command(message=message)
             NewHandler.handle(message=message, data=self._data)
         except Exception as e:
-            return e.message
+            return repr(e)
         return self._retrieve()
 
     def handle_retrieve(self, username: string, message: string) -> string:
         return self._retrieve()
+
+    def handle_reg(self, username: string, message: string) -> string:
+        try:
+            message = StringParser.remove_command(message=message)
+            RegHandler.handle(message=message, data=self._data)
+        except Exception as e:
+            return repr(e)
+        return self._retrieve()
+
+    def handle_reserve(self, username: string, message: string) -> string:
+        try:
+            message = StringParser.remove_command(message=message)
+            ReserveHandler.handle(message=message, data=self._data)
+        except Exception as e:
+            return repr(e)
+        return self._retrieve()
+
+    def handle_dereg(self, username: string, message: string) -> string:
+        try:
+            message = StringParser.remove_command(message=message)
+            DeregHandler.handle(message=message, data=self._data)
+        except Exception as e:
+            return repr(e)
+        return self._retrieve()
+
+    def handle_admin(self, username: string, message: string) -> string:
+        return str(AdminManager.admin_list)

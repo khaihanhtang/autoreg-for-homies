@@ -1,4 +1,6 @@
 import string
+
+from ..exception.exception_slot_label_not_found import SlotLabelNotFoundException
 from ..exception.exception_unability_to_insert_datevenue import UnabilityToInsertDateVenueException
 from ..exception.exception_datevenue_not_found import DateVenueNotFoundException
 from ..exception.exception_unability_to_insert_slot import UnabilityToInsertSlotException
@@ -27,3 +29,24 @@ class RegistrationData:
         self._bookings_by_datevenue[datevenue][slot_label]: SlotManager = SlotManager(
             slot_name=slot_name, max_num_players=max_num_players
         )
+
+    def insert_player(self, slot_label: string, player: string):
+        for datevenue in self._bookings_by_datevenue:
+            if slot_label in self._bookings_by_datevenue[datevenue]:
+                self._bookings_by_datevenue[datevenue][slot_label].insert(proposed_name=player)
+                return
+        raise SlotLabelNotFoundException
+
+    def insert_reservation(self, slot_label: string, player: string):
+        for datevenue in self._bookings_by_datevenue:
+            if slot_label in self._bookings_by_datevenue[datevenue]:
+                self._bookings_by_datevenue[datevenue][slot_label].insert_reservation(proposed_name=player)
+                return
+        raise SlotLabelNotFoundException
+
+    def remove(self, slot_label: string, player: string):
+        for datevenue in self._bookings_by_datevenue:
+            if slot_label in self._bookings_by_datevenue[datevenue]:
+                self._bookings_by_datevenue[datevenue][slot_label].remove(proposed_name=player)
+                return
+        raise SlotLabelNotFoundException

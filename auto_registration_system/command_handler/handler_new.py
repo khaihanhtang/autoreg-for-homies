@@ -16,9 +16,6 @@ class NewHandler:
     def is_datevenue_line(message: string) -> bool:
         try:
             first_word: string = StringParser.get_first_word(message=message)
-            print(f"first word: {first_word}")
-            print(f"{first_word}{Term.DATE_VENUE}")
-            print(first_word==Term.DATE_VENUE)
             if first_word == Term.DATE_VENUE:
                 return True
         except Exception as e:
@@ -66,14 +63,10 @@ class NewHandler:
         current_datevenue = None
         current_slot_label = None
         for line in message.splitlines():
-            print(f"line: {line}")
-            print(NewHandler.is_datevenue_line(message=line))
             if NewHandler.is_datevenue_line(message=line):
-                print("dv")
                 current_datevenue = StringParser.remove_first_word(message=line)
                 data.insert_datevenue(datevenue_name=current_datevenue)
             elif NewHandler.is_slot_line(message=line):
-                print("slot")
                 current_message = line.strip()
 
                 current_slot_label: string = NewHandler.get_slot_label(message=current_message)
@@ -111,7 +104,6 @@ class NewHandler:
                     max_num_players=max_num_players
                 )
             elif NewHandler.is_player_line(message=line):
-                print("player")
                 current_message = line.strip()
 
                 current_player_label: string = NewHandler.get_player_label(message=current_message)
