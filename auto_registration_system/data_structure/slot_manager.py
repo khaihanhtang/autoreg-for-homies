@@ -59,5 +59,10 @@ class SlotManager:
             if len(self._reservations) > 0:  # move member from reservations to players if any
                 moved_name = self._reservations.pop(0)
             self._players.append(moved_name)
+            new_list = []
+            for name in self._players:
+                if name is not None:
+                    new_list.append(name)
+            self._players = new_list
         else:
             self._reservations.remove(proposed_name)

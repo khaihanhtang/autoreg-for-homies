@@ -25,7 +25,7 @@ class AutoRegistrationSystem:
                 res += f"[{slot_label}] {slot_data.slot_name}, {Term.NUM_PLAYERS} {slot_data.max_num_players}\n"
                 for i in range(slot_data.max_num_players):
                     res += f"   {i + 1}."
-                    if i < len(slot_data.players):
+                    if i < len(slot_data.players) and slot_data.players[i] is not None:
                         res += f"     {slot_data.players[i]}"
                     res += "\n"
                 for name in slot_data.reservations:
