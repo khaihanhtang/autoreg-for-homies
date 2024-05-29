@@ -1,9 +1,10 @@
 import string
 
 
-class UnabilityToInsertSlotException(Exception):
+class PlayerLabelNotFoundException(Exception):
+
     def __init__(self):
-        self._message: string = "Unable to insert slot!"
+        self._message: string = "Player label not found!"
 
     @property
     def message(self):

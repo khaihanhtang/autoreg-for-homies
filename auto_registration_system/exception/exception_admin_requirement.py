@@ -3,5 +3,8 @@ import string
 class AdminRequirementException(Exception):
 
     def __init__(self):
-        self.message: string = "You are not admin"
+        self._message: string = "You are not admin"
 
+    @property
+    def message(self):
+        return self._message
