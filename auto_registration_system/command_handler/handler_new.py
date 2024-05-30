@@ -1,10 +1,6 @@
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.string_parser.string_parser import StringParser
-from ..exception.exception_number_as_int import NumberAsIntException
 from ..exception.error_maker import ErrorMaker
-from ..exception.exception_slot_label_not_found import SlotLabelNotFoundException
-from ..exception.exception_player_label_not_found import PlayerLabelNotFoundException
-from ..exception.exception_datevenue_not_found import DateVenueNotFoundException
 from ..term import Term
 
 

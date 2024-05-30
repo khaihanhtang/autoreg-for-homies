@@ -1,5 +1,4 @@
 from ..exception.error_maker import ErrorMaker
-from ..exception.exception_admin_requirement import AdminRequirementException
 
 
 class AdminManager:

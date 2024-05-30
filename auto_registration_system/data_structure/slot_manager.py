@@ -1,7 +1,5 @@
 from .reservation import Reservation
 from ..exception.error_maker import ErrorMaker
-from ..exception.exception_name_conflict import NameConflictException
-from ..exception.exception_name_not_found import NameNotFoundException
 
 
 class SlotManager:
@@ -53,7 +51,20 @@ class SlotManager:
                 return True
         return False
 
+    def pop_from_reservations(self, proposed_name: str) -> Reservation or None:
+        for i, reservation in enumerate(self._reservations):
+            if proposed_name == reservation.name:
+                return self._reservations.pop(i)
+        return None
+
     def insert(self, proposed_name: str):
+        # Potentially moving from reservations to main players
+        if len(self._players) < self._max_num_players:
+            reservation = self.pop_from_reservations(proposed_name=proposed_name)
+            if reservation is not None:
+                self._players.append(proposed_name)
+                return
+        # Otherwise, prioritize to append to main list. If not then append to reservations
         if self.is_in_any_list(proposed_name=proposed_name):
             raise ErrorMaker.make_name_conflict_exception(message=proposed_name)
         if len(self._players) < self._max_num_players:
