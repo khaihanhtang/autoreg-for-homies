@@ -1,10 +1,7 @@
-import string
-
-
 class LastWordNotFoundException(Exception):
 
     def __init__(self):
-        self._message: string = "Last word not found!"
+        self._message: str = "Last word not found!"
 
     @property
     def message(self):

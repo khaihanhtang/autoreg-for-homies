@@ -1,5 +1,3 @@
-import string
-
 from .command_handler.handler_dereg import DeregHandler
 from .command_handler.handler_reg import RegHandler
 from .command_handler.handler_reserve import ReserveHandler
@@ -15,7 +13,7 @@ class AutoRegistrationSystem:
     def __init__(self):
         self._data: RegistrationData = None
 
-    def _retrieve(self) -> string:
+    def _retrieve(self) -> str:
         if self._data is None:
             return "There is no registration for registering"
         res = ""
@@ -32,7 +30,7 @@ class AutoRegistrationSystem:
                     res += f"   {Term.RESERVATION}. {name}\n"
         return res
 
-    def handle_new(self, username: string, message: string) -> string:
+    def handle_new(self, username: str, message: str) -> str:
         try:
             AdminManager.enforce_admin(username=username)
         except Exception as e:
@@ -46,10 +44,10 @@ class AutoRegistrationSystem:
             return repr(e)
         return self._retrieve()
 
-    def handle_retrieve(self, username: string, message: string) -> string:
+    def handle_retrieve(self, username: str, message: str) -> str:
         return self._retrieve()
 
-    def handle_reg(self, username: string, message: string) -> string:
+    def handle_reg(self, username: str, message: str) -> str:
         try:
             message = StringParser.remove_command(message=message)
             RegHandler.handle(message=message, data=self._data)
@@ -57,7 +55,7 @@ class AutoRegistrationSystem:
             return repr(e)
         return self._retrieve()
 
-    def handle_reserve(self, username: string, message: string) -> string:
+    def handle_reserve(self, username: str, message: str) -> str:
         try:
             message = StringParser.remove_command(message=message)
             ReserveHandler.handle(message=message, data=self._data)
@@ -65,7 +63,7 @@ class AutoRegistrationSystem:
             return repr(e)
         return self._retrieve()
 
-    def handle_dereg(self, username: string, message: string) -> string:
+    def handle_dereg(self, username: str, message: str) -> str:
         try:
             message = StringParser.remove_command(message=message)
             DeregHandler.handle(message=message, data=self._data)
@@ -73,5 +71,5 @@ class AutoRegistrationSystem:
             return repr(e)
         return self._retrieve()
 
-    def handle_admin(self, username: string, message: string) -> string:
+    def handle_admin(self, username: str, message: str) -> str:
         return str(AdminManager.admin_list)

@@ -1,11 +1,8 @@
-import string
-import sys
-
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
 
-token: string = input("Enter bot token: ")
+token: str = input("Enter bot token: ")
 
 auto_reg_system = AutoRegistrationSystem()
 

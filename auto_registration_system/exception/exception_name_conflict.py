@@ -1,10 +1,7 @@
-import string
-
-
 class NameConflictException(Exception):
 
     def __init__(self):
-        self._message: string = "Name conflict!"
+        self._message: str = "Name conflict!"
 
     @property
     def message(self):

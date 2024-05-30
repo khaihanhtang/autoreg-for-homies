@@ -1,5 +1,3 @@
-import string
-
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.string_parser.string_parser import StringParser
 from ..exception.exception_number_as_int import NumberAsIntException
@@ -13,17 +11,17 @@ from ..term import Term
 class NewHandler:
 
     @staticmethod
-    def is_datevenue_line(message: string) -> bool:
+    def is_datevenue_line(message: str) -> bool:
         try:
-            first_word: string = StringParser.get_first_word(message=message)
+            first_word: str = StringParser.get_first_word(message=message)
             if first_word == Term.DATE_VENUE:
                 return True
         except Exception as e:
             return False
 
     @staticmethod
-    def get_slot_label(message: string) -> string:
-        first_word: string = StringParser.get_first_word(message=message)
+    def get_slot_label(message: str) -> str:
+        first_word: str = StringParser.get_first_word(message=message)
         try:
             if not (first_word[0] == "[" and first_word[-1:] == "]" and len(first_word) >= 3):
                 raise SlotLabelNotFoundException
@@ -32,7 +30,7 @@ class NewHandler:
             raise SlotLabelNotFoundException
 
     @staticmethod
-    def is_slot_line(message: string) -> bool:
+    def is_slot_line(message: str) -> bool:
         try:
             NewHandler.get_slot_label(message=message)
             return True
@@ -40,8 +38,8 @@ class NewHandler:
             return False
 
     @staticmethod
-    def get_player_label(message: string) -> string:
-        first_word: string = StringParser.get_first_word(message=message)
+    def get_player_label(message: str) -> str:
+        first_word: str = StringParser.get_first_word(message=message)
         try:
             if not (first_word[-1:] == "." and len(first_word) >= 2):
                 raise PlayerLabelNotFoundException
@@ -50,7 +48,7 @@ class NewHandler:
             raise PlayerLabelNotFoundException
 
     @staticmethod
-    def is_player_line(message: string) -> bool:
+    def is_player_line(message: str) -> bool:
         try:
             NewHandler.get_player_label(message=message)
             return True
@@ -59,7 +57,7 @@ class NewHandler:
 
 
     @staticmethod
-    def handle(message: string, data: RegistrationData):
+    def handle(message: str, data: RegistrationData):
         current_datevenue = None
         current_slot_label = None
         for line in message.splitlines():
@@ -69,7 +67,7 @@ class NewHandler:
             elif NewHandler.is_slot_line(message=line):
                 current_message = line.strip()
 
-                current_slot_label: string = NewHandler.get_slot_label(message=current_message)
+                current_slot_label: str = NewHandler.get_slot_label(message=current_message)
                 current_message = StringParser.remove_first_word(message=current_message)
 
                 max_num_players = 0
@@ -106,7 +104,7 @@ class NewHandler:
             elif NewHandler.is_player_line(message=line):
                 current_message = line.strip()
 
-                current_player_label: string = NewHandler.get_player_label(message=current_message)
+                current_player_label: str = NewHandler.get_player_label(message=current_message)
                 current_message = StringParser.remove_first_word(message=current_message)
 
                 if current_datevenue is None:

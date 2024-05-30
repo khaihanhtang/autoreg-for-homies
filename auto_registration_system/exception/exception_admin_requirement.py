@@ -1,9 +1,7 @@
-import string
-
 class AdminRequirementException(Exception):
 
     def __init__(self):
-        self._message: string = "You are not admin"
+        self._message: str = "You are not admin"
 
     @property
     def message(self):
