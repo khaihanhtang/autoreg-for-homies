@@ -77,7 +77,27 @@ class SlotManager:
         else:
             self._reservations.append(Reservation(name=proposed_name, is_playable=True))
 
+    def pop_player_from_players(self, proposed_name: str) -> str or None:
+        for i, name in enumerate(self._players):
+            if name == proposed_name:
+                return self._players.pop(i)
+        return None
+
     def insert_reservation(self, proposed_name: str, is_playable: bool):
+        # if proposed_name is already in list of reservations
+        for reservation in self._reservations:
+            if reservation.name == proposed_name:
+                if reservation.is_playable:
+                    reservation.is_playable = False
+                else:
+                    raise ErrorMaker.make_name_conflict_exception(message=proposed_name)
+                return
+        # if proposed_name is in the list of players
+        player_name: str = self.pop_player_from_players(proposed_name=proposed_name)
+        if player_name is not None:
+            self._reservations.insert(0, Reservation(name=player_name, is_playable=False))
+            return
+        # if proposed_name is not in anywhere
         if self.is_in_any_list(proposed_name=proposed_name):
             raise ErrorMaker.make_name_conflict_exception(message=proposed_name)
         self._reservations.append(Reservation(name=proposed_name, is_playable=is_playable))
