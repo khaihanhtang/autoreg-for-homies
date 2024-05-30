@@ -26,8 +26,11 @@ class AutoRegistrationSystem:
                     if i < len(slot_data.players) and slot_data.players[i] is not None:
                         res += f"     {slot_data.players[i]}"
                     res += "\n"
-                for name in slot_data.reservations:
-                    res += f"   {Term.RESERVATION}. {name}\n"
+                for reservation in slot_data.reservations:
+                    res += f"   {Term.RESERVATION}. {reservation.name}"
+                    if reservation.is_playable:
+                        res += f" {Term.PLAYABLE}"
+                    res += "\n"
         return res
 
     def handle_new(self, username: str, message: str) -> str:

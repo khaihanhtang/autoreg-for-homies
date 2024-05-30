@@ -114,10 +114,20 @@ class NewHandler:
 
                 if len(current_message) > 0:
                     if current_player_label == Term.RESERVATION:
-                        data.bookings_by_datevenue[current_datevenue][current_slot_label].insert_reservation(
-                            proposed_name=current_message.title()
-                        )
+                        last_word: str = StringParser.get_last_word(message=current_message)
+                        if last_word == Term.PLAYABLE:
+                            current_message = StringParser.remove_last_word(message=current_message)
+                            if len(current_message) > 0:
+                                data.insert_reservation(
+                                    slot_label=current_slot_label,
+                                    player=current_message.title(),
+                                    is_playable=True
+                                )
+                        else:
+                            data.insert_reservation(
+                                slot_label=current_slot_label,
+                                player=current_message.title()
+                            )
                     else:
-                        data.bookings_by_datevenue[current_datevenue][current_slot_label].insert(
-                            proposed_name=current_message.title()
-                        )
+                        data.insert_player(slot_label=current_slot_label,player=current_message.title())
+        data.move_all_playable_players()

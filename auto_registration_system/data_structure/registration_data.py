@@ -35,10 +35,13 @@ class RegistrationData:
                 return
         raise SlotLabelNotFoundException
 
-    def insert_reservation(self, slot_label: str, player: str):
+    def insert_reservation(self, slot_label: str, player: str, is_playable: bool = False):
         for datevenue in self._bookings_by_datevenue:
             if slot_label in self._bookings_by_datevenue[datevenue]:
-                self._bookings_by_datevenue[datevenue][slot_label].insert_reservation(proposed_name=player)
+                self._bookings_by_datevenue[datevenue][slot_label].insert_reservation(
+                    proposed_name=player,
+                    is_playable=is_playable
+                )
                 return
         raise SlotLabelNotFoundException
 
@@ -48,3 +51,8 @@ class RegistrationData:
                 self._bookings_by_datevenue[datevenue][slot_label].remove(proposed_name=player)
                 return
         raise SlotLabelNotFoundException
+
+    def move_all_playable_players(self):
+        for datevenue in self._bookings_by_datevenue:
+            for slot_label in self._bookings_by_datevenue[datevenue]:
+                self._bookings_by_datevenue[datevenue][slot_label].move_all_playable_players()
