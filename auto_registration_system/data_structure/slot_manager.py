@@ -1,4 +1,5 @@
 from .reservation import Reservation
+from ..exception.error_maker import ErrorMaker
 from ..exception.exception_name_conflict import NameConflictException
 from ..exception.exception_name_not_found import NameNotFoundException
 
@@ -31,7 +32,7 @@ class SlotManager:
         for i, reservation in enumerate(self._reservations):
             if reservation is not None and reservation.is_playable:
                 return self._reservations.pop(i)
-        raise Exception("No playable player!")
+        raise ErrorMaker.make_playable_player_not_found_exception()
 
     def move_all_playable_players(self):
         while len(self._players) < self._max_num_players:
@@ -54,7 +55,7 @@ class SlotManager:
 
     def insert(self, proposed_name: str):
         if self.is_in_any_list(proposed_name=proposed_name):
-            raise NameConflictException
+            raise ErrorMaker.make_name_conflict_exception(message=proposed_name)
         if len(self._players) < self._max_num_players:
             self._players.append(proposed_name)
         else:
@@ -62,12 +63,12 @@ class SlotManager:
 
     def insert_reservation(self, proposed_name: str, is_playable: bool):
         if self.is_in_any_list(proposed_name=proposed_name):
-            raise NameConflictException
+            raise ErrorMaker.make_name_conflict_exception(message=proposed_name)
         self._reservations.append(Reservation(name=proposed_name, is_playable=is_playable))
 
     def remove(self, proposed_name: str):
         if not self.is_in_any_list(proposed_name=proposed_name):
-            raise NameNotFoundException
+            raise ErrorMaker.make_name_not_found_exception(message=proposed_name)
 
         if proposed_name in self._players:
             self._players.remove(proposed_name)

@@ -38,7 +38,7 @@ class AutoRegistrationSystem:
         try:
             AdminManager.enforce_admin(username=username)
         except Exception as e:
-            return "This command requires admin right!"
+            return repr(e)
         self._data = RegistrationData()
 
         try:
@@ -82,10 +82,10 @@ class AutoRegistrationSystem:
         try:
             AdminManager.enforce_admin(username=username)
         except Exception as e:
-            return "This command requires admin right!"
+            return repr(e)
+
         try:
             AllplayableHandler.handle(message=message, data=self._data)
             return self._retrieve()
         except Exception as e:
-            print(repr(e))
-            return "Error! Possibly no data! Amin please runs /new to update data!"
+            return repr(e)
