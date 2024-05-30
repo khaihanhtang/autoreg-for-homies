@@ -51,19 +51,24 @@ class SlotManager:
                 return True
         return False
 
-    def pop_from_reservations(self, proposed_name: str) -> Reservation or None:
+    def pop_unplayable_player_from_reservations(self, proposed_name: str) -> Reservation or None:
         for i, reservation in enumerate(self._reservations):
             if proposed_name == reservation.name:
-                return self._reservations.pop(i)
+                if reservation.is_playable:
+                    return None
+                else:
+                    return self._reservations.pop(i)
         return None
 
     def insert(self, proposed_name: str):
         # Potentially moving from reservations to main players
-        if len(self._players) < self._max_num_players:
-            reservation = self.pop_from_reservations(proposed_name=proposed_name)
-            if reservation is not None:
+        reservation = self.pop_unplayable_player_from_reservations(proposed_name=proposed_name)
+        if reservation is not None:
+            if len(self._players) < self._max_num_players:
                 self._players.append(proposed_name)
-                return
+            else:
+                self._reservations.append(Reservation(name=proposed_name, is_playable=True))
+            return
         # Otherwise, prioritize to append to main list. If not then append to reservations
         if self.is_in_any_list(proposed_name=proposed_name):
             raise ErrorMaker.make_name_conflict_exception(message=proposed_name)
