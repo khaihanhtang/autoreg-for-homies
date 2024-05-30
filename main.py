@@ -8,6 +8,7 @@ auto_reg_system = AutoRegistrationSystem()
 
 
 async def run_hello(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(update.message.text)
     await update.message.reply_text(f'Hello {update.effective_user.first_name}')
 
 

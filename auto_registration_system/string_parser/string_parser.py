@@ -1,4 +1,6 @@
 import re
+
+from ..exception.error_maker import ErrorMaker
 from ..exception.exception_last_word_not_found import LastWordNotFoundException
 from ..exception.exception_first_word_not_found import FirstWordNotFoundException
 
@@ -59,3 +61,8 @@ class StringParser:
         for i, name in enumerate(res):
             res[i] = StringParser.remove_redundant_spaces(name).title()
         return res
+
+    @staticmethod
+    def enforce_single_line_message(message: str):
+        if '\n' in message:
+            raise ErrorMaker.make_single_line_not_satisfied_exception()

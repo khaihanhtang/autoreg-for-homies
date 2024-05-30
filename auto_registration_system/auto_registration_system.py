@@ -53,6 +53,7 @@ class AutoRegistrationSystem:
 
     def handle_reg(self, username: str, message: str) -> str:
         try:
+            StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
             RegHandler.handle(message=message, data=self._data)
         except Exception as e:
@@ -61,6 +62,7 @@ class AutoRegistrationSystem:
 
     def handle_reserve(self, username: str, message: str) -> str:
         try:
+            StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
             ReserveHandler.handle(message=message, data=self._data)
         except Exception as e:
@@ -69,6 +71,7 @@ class AutoRegistrationSystem:
 
     def handle_dereg(self, username: str, message: str) -> str:
         try:
+            StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
             DeregHandler.handle(message=message, data=self._data)
         except Exception as e:

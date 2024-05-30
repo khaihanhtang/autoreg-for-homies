@@ -35,3 +35,7 @@ class ErrorMaker:
     @staticmethod
     def make_playable_player_not_found_exception() -> Exception:
         return Exception(f"Playable player not found for reservation!")
+
+    @staticmethod
+    def make_single_line_not_satisfied_exception() -> Exception:
+        return Exception(f"Message must be single line!")
