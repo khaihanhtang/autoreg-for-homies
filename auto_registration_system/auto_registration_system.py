@@ -1,3 +1,4 @@
+from .command_handler.handler_allplayable import AllplayableHandler
 from .command_handler.handler_dereg import DeregHandler
 from .command_handler.handler_reg import RegHandler
 from .command_handler.handler_reserve import ReserveHandler
@@ -37,7 +38,7 @@ class AutoRegistrationSystem:
         try:
             AdminManager.enforce_admin(username=username)
         except Exception as e:
-            return e.message
+            return "This command requires admin right!"
         self._data = RegistrationData()
 
         try:
@@ -76,3 +77,15 @@ class AutoRegistrationSystem:
 
     def handle_admin(self, username: str, message: str) -> str:
         return str(AdminManager.admin_list)
+
+    def handle_allplayable(self, username: str, message: str) -> str:
+        try:
+            AdminManager.enforce_admin(username=username)
+        except Exception as e:
+            return "This command requires admin right!"
+        try:
+            AllplayableHandler.handle(message=message, data=self._data)
+            return self._retrieve()
+        except Exception as e:
+            print(repr(e))
+            return "Error! Possibly no data! Amin please runs /new to update data!"
