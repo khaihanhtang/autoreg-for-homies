@@ -14,6 +14,6 @@ class RegHandler:
 
         players: list[str] = StringParser.split_names(current_message)
         for name in players:
-            data.insert_player(slot_label=slot_label, player=name)
+            data.register_player(slot_label=slot_label, player=name)
 
         data.move_all_playable_players()

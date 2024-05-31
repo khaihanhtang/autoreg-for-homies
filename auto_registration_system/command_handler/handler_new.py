@@ -112,18 +112,18 @@ class NewHandler:
                         if last_word == Term.PLAYABLE:
                             current_message = StringParser.remove_last_word(message=current_message)
                             if len(current_message) > 0:
-                                data.insert_reservation(
+                                data.reserve_player(
                                     slot_label=current_slot_label,
                                     player=current_message.title(),
                                     is_playable=True
                                 )
                         else:
-                            data.insert_reservation(
+                            data.reserve_player(
                                 slot_label=current_slot_label,
                                 player=current_message.title()
                             )
                     else:
-                        data.insert_player(slot_label=current_slot_label,player=current_message.title())
+                        data.register_player(slot_label=current_slot_label, player=current_message.title())
             else:
                 if len(current_message) > 0:
                     raise ErrorMaker.make_syntax_error_exception(message=line)

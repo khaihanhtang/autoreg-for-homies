@@ -25,27 +25,27 @@ class RegistrationData:
             slot_name=slot_name, max_num_players=max_num_players
         )
 
-    def insert_player(self, slot_label: str, player: str):
+    def register_player(self, slot_label: str, player: str):
         for datevenue in self._bookings_by_datevenue:
             if slot_label in self._bookings_by_datevenue[datevenue]:
-                self._bookings_by_datevenue[datevenue][slot_label].insert(proposed_name=player)
+                self._bookings_by_datevenue[datevenue][slot_label].register(proposed_name=player)
                 return
         raise ErrorMaker.make_slot_not_found_exception(message=slot_label)
 
-    def insert_reservation(self, slot_label: str, player: str, is_playable: bool = False):
+    def reserve_player(self, slot_label: str, player: str, is_playable: bool = False):
         for datevenue in self._bookings_by_datevenue:
             if slot_label in self._bookings_by_datevenue[datevenue]:
-                self._bookings_by_datevenue[datevenue][slot_label].insert_reservation(
+                self._bookings_by_datevenue[datevenue][slot_label].reserve(
                     proposed_name=player,
                     is_playable=is_playable
                 )
                 return
         raise ErrorMaker.make_slot_not_found_exception(message=slot_label)
 
-    def remove(self, slot_label: str, player: str):
+    def deregister_player(self, slot_label: str, player: str):
         for datevenue in self._bookings_by_datevenue:
             if slot_label in self._bookings_by_datevenue[datevenue]:
-                self._bookings_by_datevenue[datevenue][slot_label].remove(proposed_name=player)
+                self._bookings_by_datevenue[datevenue][slot_label].deregister(proposed_name=player)
                 return
         raise ErrorMaker.make_slot_not_found_exception(message=slot_label)
 

@@ -60,15 +60,22 @@ class SlotManager:
                     return self._reservations.pop(i)
         return None
 
-    def insert(self, proposed_name: str):
+    def register(self, proposed_name: str):
         # Potentially moving from reservations to main players
-        reservation = self.pop_unplayable_player_from_reservations(proposed_name=proposed_name)
-        if reservation is not None:
-            if len(self._players) < self._max_num_players:
-                self._players.append(proposed_name)
-            else:
-                self._reservations.append(Reservation(name=proposed_name, is_playable=True))
-            return
+        if len(self._players) < self._max_num_players:
+            reservation = self.pop_unplayable_player_from_reservations(proposed_name=proposed_name)
+            if reservation is not None:
+                self.register(proposed_name=proposed_name)
+                return
+
+        # Changing status in reservations
+        for reservation in self._reservations:
+            if reservation.name == proposed_name:
+                if not reservation.is_playable:
+                    reservation.is_playable = True
+                    return
+                raise ErrorMaker.make_name_conflict_exception(message=proposed_name)
+
         # Otherwise, prioritize to append to main list. If not then append to reservations
         if self.is_in_any_list(proposed_name=proposed_name):
             raise ErrorMaker.make_name_conflict_exception(message=proposed_name)
@@ -83,15 +90,15 @@ class SlotManager:
                 return self._players.pop(i)
         return None
 
-    def insert_reservation(self, proposed_name: str, is_playable: bool):
+    def reserve(self, proposed_name: str, is_playable: bool):
         # if proposed_name is already in list of reservations
         for reservation in self._reservations:
             if reservation.name == proposed_name:
                 if reservation.is_playable:
                     reservation.is_playable = False
-                else:
-                    raise ErrorMaker.make_name_conflict_exception(message=proposed_name)
-                return
+                    return
+                raise ErrorMaker.make_name_conflict_exception(message=proposed_name)
+
         # if proposed_name is in the list of players
         player_name: str = self.pop_player_from_players(proposed_name=proposed_name)
         if player_name is not None:
@@ -102,7 +109,7 @@ class SlotManager:
             raise ErrorMaker.make_name_conflict_exception(message=proposed_name)
         self._reservations.append(Reservation(name=proposed_name, is_playable=is_playable))
 
-    def remove(self, proposed_name: str):
+    def deregister(self, proposed_name: str):
         if not self.is_in_any_list(proposed_name=proposed_name):
             raise ErrorMaker.make_name_not_found_exception(message=proposed_name)
 
