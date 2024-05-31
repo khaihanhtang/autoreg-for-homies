@@ -78,6 +78,19 @@ async def run_command_not_found(update: Update, context: ContextTypes.DEFAULT_TY
     await update.message.reply_text("Command not found!")
 
 
+async def run_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    response: str = "Follow the following syntax:\n"
+    response += f"/reg [name 1], ..., [name n] [slot] // register\n"
+    response += f"/dereg [name 1], ..., [name n] [slot] // de-register\n"
+    response += f"/reserve [name 1], ..., [name n] [slot] // reserve\n"
+    response += f"/retrieve // show full list\n"
+    response += f"/new [full list for registration]  // admin privilege\n"
+    response += f"/allplayable // admin privilege\n"
+    response += f"/admin // return admin list\n"
+    response += f"/hello // dummy command\n"
+    await update.message.reply_text(response)
+
+
 app = (
     ApplicationBuilder()
     .token(token)
@@ -94,6 +107,7 @@ app.add_handler(CommandHandler("reserve", run_reserve))
 app.add_handler(CommandHandler("dereg", run_dereg))
 app.add_handler(CommandHandler("admin", run_admin))
 app.add_handler(CommandHandler("allplayable", run_allplayable))
+app.add_handler(CommandHandler("help", run_help))
 app.add_handler(MessageHandler(filters.COMMAND, run_command_not_found))
 
 app.run_polling()
