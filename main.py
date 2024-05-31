@@ -1,5 +1,6 @@
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler
+from telegram.ext import filters
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
 
 token: str = input("Enter bot token: ")
@@ -60,6 +61,11 @@ async def run_allplayable(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message=update.message.text
     ))
 
+
+async def run_command_not_found(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Command not found!")
+
+
 app = (
     ApplicationBuilder()
     .token(token)
@@ -76,5 +82,6 @@ app.add_handler(CommandHandler("reserve", run_reserve))
 app.add_handler(CommandHandler("dereg", run_dereg))
 app.add_handler(CommandHandler("admin", run_admin))
 app.add_handler(CommandHandler("allplayable", run_allplayable))
+app.add_handler(MessageHandler(filters.COMMAND, run_command_not_found))
 
 app.run_polling()
