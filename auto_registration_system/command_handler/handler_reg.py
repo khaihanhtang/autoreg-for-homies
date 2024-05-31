@@ -15,13 +15,17 @@ class RegHandler:
         players: list[str] = StringParser.split_names(current_message)
 
         response: str = ""
+        count_processed: int = 0
         for name in players:
             if len(name) > 0:
+                count_processed += 1
                 try:
                     data.register_player(slot_label=slot_label, player=name)
                     response += f"{name} was processed successfully!\n"
                 except Exception as e:
                     response += f"{repr(e)}\n"
+        if count_processed == 0:
+            return "Nothing was processed!"
 
         data.move_all_playable_players()
 
