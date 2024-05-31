@@ -8,44 +8,56 @@ token: str = input("Enter bot token: ")
 auto_reg_system = AutoRegistrationSystem()
 
 
-async def run_hello(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(update.message.text)
-    await update.message.reply_text(f'Hello {update.effective_user.first_name}')
-
-
-async def run_retrieve(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def send_full_list(update: Update):
     await update.message.reply_text(auto_reg_system.handle_retrieve(
         username=update.effective_user.username,
         message=update.message.text
     ))
 
 
+async def run_hello(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(update.message.text)
+    await update.message.reply_text(f'Hello {update.effective_user.first_name}')
+
+
+async def run_retrieve(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await send_full_list(update=update)
+
+
 async def run_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(auto_reg_system.handle_new(
+    message = auto_reg_system.handle_new(
         username=update.effective_user.username,
         message=update.message.text
-    ))
+    )
+    await send_full_list(update=update)
+    await update.message.reply_text(message)
 
 
 async def run_reg(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(auto_reg_system.handle_reg(
+    message = auto_reg_system.handle_reg(
         username=update.effective_user.username,
         message=update.message.text
-    ))
+    )
+    await send_full_list(update=update)
+    await update.message.reply_text(message)
 
 
 async def run_reserve(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(auto_reg_system.handle_reserve(
+    message = auto_reg_system.handle_reserve(
         username=update.effective_user.username,
         message=update.message.text
-    ))
+    )
+    await send_full_list(update=update)
+    await update.message.reply_text(message)
 
 
 async def run_dereg(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(auto_reg_system.handle_dereg(
+    message = auto_reg_system.handle_dereg(
         username=update.effective_user.username,
         message=update.message.text
-    ))
+    )
+    await send_full_list(update=update)
+    await update.message.reply_text(message)
 
 
 async def run_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):

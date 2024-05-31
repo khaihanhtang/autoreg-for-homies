@@ -25,7 +25,7 @@ class AutoRegistrationSystem:
                 for i in range(slot_data.max_num_players):
                     res += f"   {i + 1}."
                     if i < len(slot_data.players) and slot_data.players[i] is not None:
-                        res += f"     {slot_data.players[i]}"
+                        res += f" {slot_data.players[i]}"
                     res += "\n"
                 for reservation in slot_data.reservations:
                     res += f"   {Term.RESERVATION}. {reservation.name}"
@@ -43,10 +43,9 @@ class AutoRegistrationSystem:
 
         try:
             message = StringParser.remove_command(message=message)
-            NewHandler.handle(message=message, data=self._data)
+            return NewHandler.handle(message=message, data=self._data)
         except Exception as e:
             return repr(e)
-        return self._retrieve()
 
     def handle_retrieve(self, username: str, message: str) -> str:
         return self._retrieve()
@@ -55,28 +54,25 @@ class AutoRegistrationSystem:
         try:
             StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
-            RegHandler.handle(message=message, data=self._data)
+            return RegHandler.handle(message=message, data=self._data)
         except Exception as e:
             return repr(e)
-        return self._retrieve()
 
     def handle_reserve(self, username: str, message: str) -> str:
         try:
             StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
-            ReserveHandler.handle(message=message, data=self._data)
+            return ReserveHandler.handle(message=message, data=self._data)
         except Exception as e:
             return repr(e)
-        return self._retrieve()
 
     def handle_dereg(self, username: str, message: str) -> str:
         try:
             StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
-            DeregHandler.handle(message=message, data=self._data)
+            return DeregHandler.handle(message=message, data=self._data)
         except Exception as e:
             return repr(e)
-        return self._retrieve()
 
     def handle_admin(self, username: str, message: str) -> str:
         return str(AdminManager.admin_list)
@@ -88,7 +84,6 @@ class AutoRegistrationSystem:
             return repr(e)
 
         try:
-            AllplayableHandler.handle(message=message, data=self._data)
-            return self._retrieve()
+            return AllplayableHandler.handle(message=message, data=self._data)
         except Exception as e:
             return repr(e)

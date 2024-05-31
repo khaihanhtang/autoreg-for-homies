@@ -51,9 +51,16 @@ class StringParser:
     @staticmethod
     def remove_last_word(message: str) -> str:
         res: str = message.strip()
+
         if len(res) == 0:
             raise LastWordNotFoundException
-        return StringParser.remove_redundant_spaces(res.rsplit(' ', 1)[0])
+
+        split_res = res.rsplit(' ', 1)
+
+        # this string has exactly one word
+        if len(split_res) == 1:
+            return ""
+        return StringParser.remove_redundant_spaces(split_res[0])
 
     @staticmethod
     def split_names(message: str) -> list[str]:

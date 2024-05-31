@@ -52,7 +52,7 @@ class NewHandler:
             return False
 
     @staticmethod
-    def handle(message: str, data: RegistrationData):
+    def handle(message: str, data: RegistrationData) -> str:
         current_datevenue = None
         current_slot_label = None
         for line in message.splitlines():
@@ -128,3 +128,4 @@ class NewHandler:
                 if len(current_message) > 0:
                     raise ErrorMaker.make_syntax_error_exception(message=line)
         data.move_all_playable_players()
+        return f"Setup successfully!"

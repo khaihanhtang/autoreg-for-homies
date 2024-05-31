@@ -13,6 +13,16 @@ class DeregHandler:
             raise ErrorMaker.make_syntax_error_exception(message=message)
 
         players: list[str] = StringParser.split_names(current_message)
+
+        response: str = ""
         for name in players:
-            data.deregister_player(slot_label=slot_label, player=name)
+            if len(name) > 0:
+                try:
+                    data.deregister_player(slot_label=slot_label, player=name)
+                    response += f"{name} was processed successfully!\n"
+                except Exception as e:
+                    response += f"{repr(e)}\n"
+
         data.move_all_playable_players()
+
+        return response

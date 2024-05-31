@@ -5,7 +5,7 @@ from auto_registration_system.string_parser.string_parser import StringParser
 
 class RegHandler:
     @staticmethod
-    def handle(message: str, data: RegistrationData):
+    def handle(message: str, data: RegistrationData) -> str:
         try:
             slot_label = StringParser.get_last_word(message=message)
             current_message = StringParser.remove_last_word(message=message)
@@ -13,7 +13,16 @@ class RegHandler:
             raise ErrorMaker.make_syntax_error_exception(message=message)
 
         players: list[str] = StringParser.split_names(current_message)
+
+        response: str = ""
         for name in players:
-            data.register_player(slot_label=slot_label, player=name)
+            if len(name) > 0:
+                try:
+                    data.register_player(slot_label=slot_label, player=name)
+                    response += f"{name} was processed successfully!\n"
+                except Exception as e:
+                    response += f"{repr(e)}\n"
 
         data.move_all_playable_players()
+
+        return response
