@@ -52,7 +52,7 @@ class NewHandler:
             return False
 
     @staticmethod
-    def handle(message: str, data: RegistrationData) -> str:
+    def handle(message: str, data: RegistrationData) -> bool:
         current_datevenue = None
         current_slot_label = None
         count_processed: int = 0
@@ -131,7 +131,7 @@ class NewHandler:
                     raise ErrorMaker.make_syntax_error_exception(message=line)
                 count_processed -= 1
         if count_processed == 0:
-            return "Nothing was processed!"
-        
+            return False
+
         data.move_all_playable_players()
-        return f"Setup successfully!"
+        return True

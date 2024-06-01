@@ -40,10 +40,14 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e)
 
-        self._data = RegistrationData()
+        temp_data = RegistrationData()
         try:
             message = StringParser.remove_command(message=message)
-            return NewHandler.handle(message=message, data=self._data)
+            response = NewHandler.handle(message=message, data=temp_data)
+            if response:
+                self._data = temp_data
+                return "Setup successfully!"
+            return "Nothing was processed!"
         except Exception as e:
             return repr(e)
 
