@@ -55,8 +55,10 @@ class NewHandler:
     def handle(message: str, data: RegistrationData) -> str:
         current_datevenue = None
         current_slot_label = None
+        count_processed: int = 0
         for line in message.splitlines():
             current_message = line.strip()
+            count_processed += 1
             if NewHandler.is_datevenue_line(message=line):
                 current_datevenue = StringParser.remove_first_word(message=line)
                 data.insert_datevenue(datevenue_name=current_datevenue)
@@ -127,5 +129,9 @@ class NewHandler:
             else:
                 if len(current_message) > 0:
                     raise ErrorMaker.make_syntax_error_exception(message=line)
+                count_processed -= 1
+        if count_processed == 0:
+            return "Nothing was processed!"
+        
         data.move_all_playable_players()
         return f"Setup successfully!"
