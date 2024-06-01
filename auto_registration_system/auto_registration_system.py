@@ -39,8 +39,8 @@ class AutoRegistrationSystem:
             AdminManager.enforce_admin(username=username)
         except Exception as e:
             return repr(e)
-        self._data = RegistrationData()
 
+        self._data = RegistrationData()
         try:
             message = StringParser.remove_command(message=message)
             return NewHandler.handle(message=message, data=self._data)
