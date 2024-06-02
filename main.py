@@ -84,10 +84,12 @@ async def run_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response += f"/dereg [name 1], ..., [name n] [slot] // de-register\n"
     response += f"/reserve [name 1], ..., [name n] [slot] // reserve\n"
     response += f"/retrieve // show full list\n"
-    response += f"/new [full list for registration]  // admin privilege\n"
-    response += f"/allplayable // admin privilege\n"
-    response += f"/admin // return admin list\n"
-    response += f"/hello // dummy command\n"
+    response += f"\n"
+    response += f"Shortened commands:\n"
+    response += f"/rg: same as /reg\n"
+    response += f"/dreg: same as /dereg\n"
+    response += f"/rs: same as /reserve\n"
+    response += f"/all: same as /retrieve\n"
     await update.message.reply_text(response)
 
 
@@ -101,10 +103,14 @@ app = (
 
 app.add_handler(CommandHandler("hello", run_hello))
 app.add_handler(CommandHandler("retrieve", run_retrieve))
+app.add_handler(CommandHandler("all", run_retrieve)) # same as /retrieve
 app.add_handler(CommandHandler("new", run_new))
 app.add_handler(CommandHandler("reg", run_reg))
+app.add_handler(CommandHandler("rg", run_reg)) # same as /reg
 app.add_handler(CommandHandler("reserve", run_reserve))
+app.add_handler(CommandHandler("rs", run_reserve)) # same as /reserve
 app.add_handler(CommandHandler("dereg", run_dereg))
+app.add_handler(CommandHandler("drg", run_dereg)) # same as /drg
 app.add_handler(CommandHandler("admin", run_admin))
 app.add_handler(CommandHandler("allplayable", run_allplayable))
 app.add_handler(CommandHandler("help", run_help))
