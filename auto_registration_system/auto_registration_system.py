@@ -40,9 +40,12 @@ class AutoRegistrationSystem:
         return AutoRegistrationSystem.convert_registrations_to_string(data=self._data)
 
     def _get_available_slots(self) -> str:
-        return AutoRegistrationSystem.convert_registrations_to_string(
+        res: str = AutoRegistrationSystem.convert_registrations_to_string(
             data=AvHandler.handle(data=self._data)
         )
+        if len(res) == 0:
+            return "No available slot!"
+        return res
 
     def handle_new(self, username: str, message: str) -> str:
         try:
