@@ -1,4 +1,5 @@
 from .command_handler.handler_allplayable import AllplayableHandler
+from .command_handler.handler_av import AvHandler
 from .command_handler.handler_dereg import DeregHandler
 from .command_handler.handler_reg import RegHandler
 from .command_handler.handler_reserve import ReserveHandler
@@ -14,11 +15,12 @@ class AutoRegistrationSystem:
     def __init__(self):
         self._data: RegistrationData = None
 
-    def _retrieve(self) -> str:
-        if self._data is None:
-            return "There is no registration for registering"
+    @staticmethod
+    def convert_registrations_to_string(data: RegistrationData):
+        if data is None:
+            return "Registration list is empty!"
         res = ""
-        for datevenue_name, datevenue_data in self._data.bookings_by_datevenue.items():
+        for datevenue_name, datevenue_data in data.bookings_by_datevenue.items():
             res += f"{Term.DATE_VENUE} {datevenue_name}\n"
             for slot_label, slot_data in datevenue_data.items():
                 res += f"[{slot_label}] {slot_data.slot_name}, {Term.NUM_PLAYERS} {slot_data.max_num_players}\n"
@@ -33,6 +35,14 @@ class AutoRegistrationSystem:
                         res += f" {Term.PLAYABLE}"
                     res += "\n"
         return res
+
+    def _retrieve(self) -> str:
+        return AutoRegistrationSystem.convert_registrations_to_string(data=self._data)
+
+    def _get_available_slots(self) -> str:
+        return AutoRegistrationSystem.convert_registrations_to_string(
+            data=AvHandler.handle(data=self._data)
+        )
 
     def handle_new(self, username: str, message: str) -> str:
         try:
@@ -53,6 +63,9 @@ class AutoRegistrationSystem:
 
     def handle_retrieve(self, username: str, message: str) -> str:
         return self._retrieve()
+
+    def handle_av(self, username: str, message: str) -> str:
+        return self._get_available_slots()
 
     def handle_reg(self, username: str, message: str) -> str:
         try:

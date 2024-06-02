@@ -8,7 +8,7 @@ token: str = input("Enter bot token: ")
 auto_reg_system = AutoRegistrationSystem()
 
 
-async def send_full_list(update: Update):
+async def send_player_list(update: Update):
     await update.message.reply_text(auto_reg_system.handle_retrieve(
         username=update.effective_user.username,
         message=update.message.text
@@ -21,7 +21,14 @@ async def run_hello(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def run_retrieve(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await send_full_list(update=update)
+    await send_player_list(update=update)
+
+
+async def run_av(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(auto_reg_system.handle_av(
+        username=update.effective_user.username,
+        message=update.message.text
+    ))
 
 
 async def run_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -29,7 +36,7 @@ async def run_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
         username=update.effective_user.username,
         message=update.message.text
     )
-    await send_full_list(update=update)
+    await send_player_list(update=update)
     await update.message.reply_text(message)
 
 
@@ -38,7 +45,7 @@ async def run_reg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         username=update.effective_user.username,
         message=update.message.text
     )
-    await send_full_list(update=update)
+    await send_player_list(update=update)
     await update.message.reply_text(message)
 
 
@@ -47,7 +54,7 @@ async def run_reserve(update: Update, context: ContextTypes.DEFAULT_TYPE):
         username=update.effective_user.username,
         message=update.message.text
     )
-    await send_full_list(update=update)
+    await send_player_list(update=update)
     await update.message.reply_text(message)
 
 
@@ -56,19 +63,12 @@ async def run_dereg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         username=update.effective_user.username,
         message=update.message.text
     )
-    await send_full_list(update=update)
+    await send_player_list(update=update)
     await update.message.reply_text(message)
 
 
 async def run_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(auto_reg_system.handle_admin(
-        username=update.effective_user.username,
-        message=update.message.text
-    ))
-
-
-async def run_allplayable(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(auto_reg_system.handle_allplayable(
         username=update.effective_user.username,
         message=update.message.text
     ))
@@ -84,12 +84,15 @@ async def run_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response += f"/dereg [name 1], ..., [name n] [slot] // de-register\n"
     response += f"/reserve [name 1], ..., [name n] [slot] // reserve\n"
     response += f"/retrieve // show full list\n"
+    response += f"/av // show available slots"
     response += f"\n"
     response += f"Shortened commands:\n"
     response += f"/rg: same as /reg\n"
     response += f"/dreg: same as /dereg\n"
     response += f"/rs: same as /reserve\n"
     response += f"/all: same as /retrieve\n"
+    response += f"\n"
+    response += f"Detailed guide => see https://hackmd.io/@1UKfawZER96uwy_xohcquQ/B1fyW-c4R"
     await update.message.reply_text(response)
 
 
@@ -112,7 +115,7 @@ app.add_handler(CommandHandler("rs", run_reserve)) # same as /reserve
 app.add_handler(CommandHandler("dereg", run_dereg))
 app.add_handler(CommandHandler("drg", run_dereg)) # same as /drg
 app.add_handler(CommandHandler("admin", run_admin))
-app.add_handler(CommandHandler("allplayable", run_allplayable))
+app.add_handler(CommandHandler("av", run_av))
 app.add_handler(CommandHandler("help", run_help))
 app.add_handler(MessageHandler(filters.COMMAND, run_command_not_found))
 
