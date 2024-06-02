@@ -2,7 +2,7 @@ from ..exception.error_maker import ErrorMaker
 
 
 class AdminManager:
-    admin_list: set = {"khaihanhtang", "trung1973"}
+    admin_list: set = {"khaihanhtang", "trung1973", "bibi_tran"}
 
     @staticmethod
     def enforce_admin(username: str):

@@ -84,7 +84,7 @@ async def run_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response += f"/dereg [name 1], ..., [name n] [slot] // de-register\n"
     response += f"/reserve [name 1], ..., [name n] [slot] // reserve\n"
     response += f"/retrieve // show full list\n"
-    response += f"/av // show available slots"
+    response += f"/av // show available slots\n"
     response += f"\n"
     response += f"Shortened commands:\n"
     response += f"/rg: same as /reg\n"
