@@ -48,8 +48,8 @@ class AutoRegistrationSystem:
             response = NewHandler.handle(message=message, data=temp_data)
             if response:
                 self._data = temp_data
-                return "Setup successfully!"
-            return "Nothing was processed!"
+                return "Cài đặt thành công!"
+            return "Không có gì thay đổi"
         except Exception as e:
             return repr(e)
 
@@ -61,7 +61,7 @@ class AutoRegistrationSystem:
             data=AvHandler.handle(data=self._data)
         )
         if res is None or len(res) == 0:
-            return "No available slot!"
+            return "Không còn slot trống!"
         return res
 
     def handle_reg(self, message: str) -> str:

@@ -21,11 +21,11 @@ class DeregHandler:
                 count_processed += 1
                 try:
                     data.deregister_player(slot_label=slot_label, player=name)
-                    response += f"{name} was processed successfully!\n"
+                    response += f"{name} vừa được xóa khỏi slot {slot_label}\n"
                 except Exception as e:
                     response += f"{repr(e)}\n"
         if count_processed == 0:
-            return "Nothing was processed!"
+            return "Không có gì thay đổi"
 
         data.move_all_playable_players()
 

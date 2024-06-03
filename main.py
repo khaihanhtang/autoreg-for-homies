@@ -26,7 +26,7 @@ async def write_data_and_update_bot_message_for_full_list(
         new_chat_id = sent_message_info.chat_id
         new_message_id = sent_message_info.message_id
     else:
-        await update.message.reply_text("Registration list is empty!")
+        await update.message.reply_text("Danh sách chơi trống!")
 
     # inform message
     if message is not None:
@@ -44,7 +44,7 @@ async def write_data_and_update_bot_message_for_full_list(
 
 async def run_hello(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(update.message.text)
-    await update.message.reply_text(f'Hello {update.effective_user.first_name}')
+    await update.message.reply_text(f'Chào {update.effective_user.first_name}')
 
 
 async def run_retrieve(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -83,7 +83,7 @@ async def run_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def run_command_not_found(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Command not found!")
+    await update.message.reply_text("Sai lệnh!")
 
 
 async def run_allplayable(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -95,20 +95,20 @@ async def run_allplayable(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def run_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    response: str = "Follow the following syntax:\n"
-    response += f"/reg [name 1], ..., [name n] [slot] // register\n"
-    response += f"/dereg [name 1], ..., [name n] [slot] // de-register\n"
-    response += f"/reserve [name 1], ..., [name n] [slot] // reserve\n"
-    response += f"/retrieve // show full list\n"
-    response += f"/av // show available slots\n"
+    response: str = "Sử dụng những cú pháp sau:\n"
+    response += f"/reg [tên 1], ..., [tên n] [slot]\t(đăng kí)\n"
+    response += f"/dereg [tên 1], ..., [tên n] [slot]\t(hủy đăng kí)\n"
+    response += f"/reserve [tên 1], ..., [tên n] [slot]\t(dự bị)\n"
+    response += f"/retrieve\t(hiện đầy đủ danh sách)\n"
+    response += f"/av\t(hiện các slot còn thiếu người)\n"
     response += f"\n"
-    response += f"Shortened commands:\n"
-    response += f"/rg: same as /reg\n"
-    response += f"/drg: same as /dereg\n"
-    response += f"/rs: same as /reserve\n"
-    response += f"/all: same as /retrieve\n"
+    response += f"Các lệnh rút ngắn:\n"
+    response += f"/rg\t(giống như /reg)\n"
+    response += f"/drg\t(giống như /dereg)\n"
+    response += f"/rs\t(giống như /reserve)\n"
+    response += f"/all\t(giống như /retrieve)\n"
     response += f"\n"
-    response += f"Detailed guide: https://hackmd.io/@1UKfawZER96uwy_xohcquQ/B1fyW-c4R"
+    response += f"Hướng dẫn chi tiết: https://hackmd.io/@1UKfawZER96uwy_xohcquQ/B1fyW-c4R"
     await update.message.reply_text(response)
 
 
