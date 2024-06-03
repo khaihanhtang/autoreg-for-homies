@@ -16,9 +16,9 @@ class AutoRegistrationSystem:
         self._data: RegistrationData or None = None
 
     @staticmethod
-    def convert_registrations_to_string(data: RegistrationData):
+    def convert_registrations_to_string(data: RegistrationData) -> str or None:
         if data is None:
-            return "Registration list is empty!"
+            return None
         res = ""
         for datevenue_name, datevenue_data in data.bookings_by_datevenue.items():
             res += f"{Term.DATE_VENUE} {datevenue_name}\n"
@@ -34,17 +34,6 @@ class AutoRegistrationSystem:
                     if reservation.is_playable:
                         res += f" {Term.PLAYABLE}"
                     res += "\n"
-        return res
-
-    def _retrieve(self) -> str:
-        return AutoRegistrationSystem.convert_registrations_to_string(data=self._data)
-
-    def _get_available_slots(self) -> str:
-        res: str = AutoRegistrationSystem.convert_registrations_to_string(
-            data=AvHandler.handle(data=self._data)
-        )
-        if len(res) == 0:
-            return "No available slot!"
         return res
 
     def handle_new(self, username: str, message: str) -> str:
@@ -64,11 +53,16 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e)
 
-    def get_all_slots_as_string(self) -> str:
-        return self._retrieve()
+    def get_all_slots_as_string(self) -> str or None:
+        return AutoRegistrationSystem.convert_registrations_to_string(data=self._data)
 
     def get_available_slots_as_string(self) -> str:
-        return self._get_available_slots()
+        res: str = AutoRegistrationSystem.convert_registrations_to_string(
+            data=AvHandler.handle(data=self._data)
+        )
+        if res is None or len(res) == 0:
+            return "No available slot!"
+        return res
 
     def handle_reg(self, message: str) -> str:
         try:
