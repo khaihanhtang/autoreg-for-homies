@@ -34,7 +34,10 @@ async def write_data_and_update_bot_message_for_full_list(
 
     # delete previous message
     if last_chat_id is not None and last_message_id is not None:
-        await context.bot.deleteMessage(message_id=last_message_id, chat_id=last_chat_id)
+        try:
+            await context.bot.deleteMessage(message_id=last_message_id, chat_id=last_chat_id)
+        except Exception as e:
+            pass
     last_chat_id = new_chat_id
     last_message_id = new_message_id
 
