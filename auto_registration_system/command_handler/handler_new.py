@@ -10,7 +10,7 @@ class NewHandler:
     def is_datevenue_line(message: str) -> bool:
         try:
             first_word: str = StringParser.get_first_word(message=message)
-            if first_word == Term.DATE_VENUE:
+            if first_word in {Term.DATE_VENUE, Term.DATE_VENUE_SHORTENED}:
                 return True
         except Exception as e:
             return False
@@ -18,10 +18,16 @@ class NewHandler:
     @staticmethod
     def get_slot_label(message: str) -> str:
         first_word: str = StringParser.get_first_word(message=message)
+        tag = first_word
+        if first_word[0] == "[" and first_word[-1:] == "]":
+            if len(first_word) >= 3:
+                tag = first_word[1:-1]
+            else:
+                tag = ""
         try:
-            if not (first_word[0] == "[" and first_word[-1:] == "]" and len(first_word) >= 3):
+            if not (tag.islower() and tag.isalnum()):
                 raise ErrorMaker.make_syntax_error_exception(message=message)
-            return first_word[1:-1]
+            return tag
         except Exception as e:
             raise ErrorMaker.make_syntax_error_exception(message=message)
 
