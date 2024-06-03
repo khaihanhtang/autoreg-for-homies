@@ -13,7 +13,7 @@ from .string_parser.string_parser import StringParser
 class AutoRegistrationSystem:
 
     def __init__(self):
-        self._data: RegistrationData = None
+        self._data: RegistrationData or None = None
 
     @staticmethod
     def convert_registrations_to_string(data: RegistrationData):
@@ -64,13 +64,13 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e)
 
-    def handle_retrieve(self, username: str, message: str) -> str:
+    def get_all_slots_as_string(self) -> str:
         return self._retrieve()
 
-    def handle_av(self, username: str, message: str) -> str:
+    def get_available_slots_as_string(self) -> str:
         return self._get_available_slots()
 
-    def handle_reg(self, username: str, message: str) -> str:
+    def handle_reg(self, message: str) -> str:
         try:
             StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
@@ -78,7 +78,7 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e)
 
-    def handle_reserve(self, username: str, message: str) -> str:
+    def handle_reserve(self, message: str) -> str:
         try:
             StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
@@ -86,7 +86,7 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e)
 
-    def handle_dereg(self, username: str, message: str) -> str:
+    def handle_dereg(self, message: str) -> str:
         try:
             StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
@@ -94,7 +94,8 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e)
 
-    def handle_admin(self, username: str, message: str) -> str:
+    @staticmethod
+    def get_admin_list_as_string() -> str:
         return str(AdminManager.admin_list)
 
     def handle_allplayable(self, username: str, message: str) -> str:
