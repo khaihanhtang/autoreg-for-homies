@@ -32,6 +32,8 @@ class TelegramCommandHandler:
     CALLBACK_DATA_HELP = f"_{COMMAND_HELP}"
     CALLBACK_DATA_ALL = f"_{COMMAND_ALL}"
 
+    SECOND_CLICK_TO_DEREGISTER = False
+
     @staticmethod
     def make_inline_buttons_for_registration(data: RegistrationData) -> InlineKeyboardMarkup:
         button_count = 0
@@ -95,26 +97,33 @@ class TelegramCommandHandler:
         slot_label = query.data
         slot = TelegramCommandHandler.auto_reg_system.data.get_slot(slot_label=slot_label)
 
-        use_reg = False
-        if not slot.is_in_any_list(proposed_name=full_name):
-            use_reg = True
-        if slot.is_in_reservations(proposed_name=full_name):
-            reservation = slot.get_reservation(proposed_name=full_name)
-            if not reservation.is_playable:
+        if TelegramCommandHandler.SECOND_CLICK_TO_DEREGISTER:
+            use_reg = False
+            if not slot.is_in_any_list(proposed_name=full_name):
                 use_reg = True
+            if slot.is_in_reservations(proposed_name=full_name):
+                reservation = slot.get_reservation(proposed_name=full_name)
+                if not reservation.is_playable:
+                    use_reg = True
 
-        if use_reg:
+            if use_reg:
+                res = await context.bot.send_message(
+                    chat_id=query.message.chat.id,
+                    text=f"/{TelegramCommandHandler.COMMAND_REG} {full_name} {slot_label}"
+                )
+                await TelegramCommandHandler.run_reg(update=Update(update_id=res.id, message=res), context=context)
+            else:
+                res = await context.bot.send_message(
+                    chat_id=query.message.chat.id,
+                    text=f"/{TelegramCommandHandler.COMMAND_DEREG} {full_name} {slot_label}"
+                )
+                await TelegramCommandHandler.run_dereg(update=Update(update_id=res.id, message=res), context=context)
+        else:
             res = await context.bot.send_message(
                 chat_id=query.message.chat.id,
                 text=f"/{TelegramCommandHandler.COMMAND_REG} {full_name} {slot_label}"
             )
             await TelegramCommandHandler.run_reg(update=Update(update_id=res.id, message=res), context=context)
-        else:
-            res = await context.bot.send_message(
-                chat_id=query.message.chat.id,
-                text=f"/{TelegramCommandHandler.COMMAND_DEREG} {full_name} {slot_label}"
-            )
-            await TelegramCommandHandler.run_dereg(update=Update(update_id=res.id, message=res), context=context)
 
     @staticmethod
     async def write_data_and_update_bot_message_for_full_list(
