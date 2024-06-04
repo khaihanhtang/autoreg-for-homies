@@ -7,13 +7,15 @@ from ..term import Term
 class NewHandler:
 
     @staticmethod
-    def is_datevenue_line(message: str) -> bool:
+    def is_date_venue_line(message: str) -> bool:
         try:
             first_word: str = StringParser.get_first_word(message=message)
-            if first_word in {Term.DATE_VENUE, Term.DATE_VENUE_SHORTENED}:
-                return True
-        except Exception as e:
-            return False
+        finally:
+            pass
+
+        if first_word in {Term.DATE_VENUE, Term.DATE_VENUE_SHORTENED}:
+            return True
+        return False
 
     @staticmethod
     def get_slot_label(message: str) -> str:
@@ -28,7 +30,7 @@ class NewHandler:
             if not (tag.islower() and tag.isalnum()):
                 raise ErrorMaker.make_syntax_error_exception(message=message)
             return tag
-        except Exception as e:
+        except Exception:
             raise ErrorMaker.make_syntax_error_exception(message=message)
 
     @staticmethod
@@ -36,7 +38,7 @@ class NewHandler:
         try:
             NewHandler.get_slot_label(message=message)
             return True
-        except Exception as e:
+        except Exception:
             return False
 
     @staticmethod
@@ -46,7 +48,7 @@ class NewHandler:
             if not (first_word[-1:] == "." and len(first_word) >= 2):
                 raise ErrorMaker.make_syntax_error_exception(message=message)
             return first_word[:-1]
-        except Exception as e:
+        except Exception:
             raise ErrorMaker.make_syntax_error_exception(message=message)
 
     @staticmethod
@@ -54,29 +56,28 @@ class NewHandler:
         try:
             NewHandler.get_player_label(message=message)
             return True
-        except Exception as e:
+        except Exception:
             return False
 
     @staticmethod
     def handle(message: str, data: RegistrationData) -> bool:
-        current_datevenue = None
+        current_date_venue = None
         current_slot_label = None
         count_processed: int = 0
         for line in message.splitlines():
             current_message = line.strip()
             count_processed += 1
-            if NewHandler.is_datevenue_line(message=line):
-                current_datevenue = StringParser.remove_first_word(message=line)
-                data.insert_datevenue(datevenue_name=current_datevenue)
+            if NewHandler.is_date_venue_line(message=line):
+                current_date_venue = StringParser.remove_first_word(message=line)
+                data.insert_datevenue(datevenue_name=current_date_venue)
             elif NewHandler.is_slot_line(message=line):
                 current_slot_label: str = NewHandler.get_slot_label(message=current_message)
                 current_message = StringParser.remove_first_word(message=current_message)
 
-                max_num_players = 0
                 try:
                     max_num_players = int(StringParser.get_last_word(message=current_message))
                     current_message = StringParser.remove_last_word(message=current_message)
-                except Exception as e:
+                except Exception:
                     raise ErrorMaker.make_syntax_error_exception(message=line)
 
                 try:
@@ -87,18 +88,18 @@ class NewHandler:
                     # remove if last character is ',' or '.'
                     if current_message[-1:] in {",", "."}:
                         current_message = StringParser.remove_redundant_spaces(current_message[:-1])
-                except Exception as e:
+                finally:
                     pass
 
                 # abort if empty string
                 if len(current_message) == 0:
                     raise ErrorMaker.make_syntax_error_exception(message=line)
 
-                if current_datevenue is None:
+                if current_date_venue is None:
                     raise ErrorMaker.make_dv_not_found_exception(message=line)
 
                 data.insert_slot(
-                    datevenue=current_datevenue,
+                    datevenue=current_date_venue,
                     slot_label=current_slot_label,
                     slot_name=current_message,
                     max_num_players=max_num_players
@@ -109,7 +110,7 @@ class NewHandler:
                 current_player_label: str = NewHandler.get_player_label(message=current_message)
                 current_message = StringParser.remove_first_word(message=current_message)
 
-                if current_datevenue is None:
+                if current_date_venue is None:
                     raise ErrorMaker.make_dv_not_found_exception(message=line)
                 if current_slot_label is None:
                     raise ErrorMaker.make_slot_not_found_exception(message=line)

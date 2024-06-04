@@ -24,9 +24,9 @@ class AutoRegistrationSystem:
         if data is None:
             return None
         res = ""
-        for datevenue_name, datevenue_data in data.bookings_by_datevenue.items():
-            res += f"{Term.DATE_VENUE} {datevenue_name}\n"
-            for slot_label, slot_data in datevenue_data.items():
+        for date_venue_name, date_venue_data in data.bookings_by_datevenue.items():
+            res += f"{Term.DATE_VENUE} {date_venue_name}\n"
+            for slot_label, slot_data in date_venue_data.items():
                 res += f"[{slot_label}] {slot_data.slot_name}, {Term.NUM_PLAYERS} {slot_data.max_num_players}\n"
                 for i in range(slot_data.max_num_players):
                     res += f"   {i + 1}."

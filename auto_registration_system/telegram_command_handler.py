@@ -15,6 +15,9 @@ class TelegramCommandHandler:
     last_chat_id = None
     last_message_id = None
 
+    last_av_chat_id = None
+    last_av_message_id = None
+
     COMMAND_HELLO = "hello"
     COMMAND_RETRIEVE = "retrieve"
     COMMAND_ALL = "all"
@@ -39,8 +42,8 @@ class TelegramCommandHandler:
         button_count = 0
         button_list = []
         current_line_button_list = None
-        for datevenue in data.bookings_by_datevenue:
-            for slot_label in data.bookings_by_datevenue[datevenue]:
+        for date_venue in data.bookings_by_datevenue:
+            for slot_label in data.bookings_by_datevenue[date_venue]:
                 button = InlineKeyboardButton(text=f"slot {slot_label}", callback_data=slot_label)
                 if button_count % TelegramCommandHandler.NUM_BUTTONS_PER_LINE == 0:
                     if current_line_button_list is not None:
@@ -83,7 +86,7 @@ class TelegramCommandHandler:
                 chat_id=query.message.chat.id,
                 text=f"/{TelegramCommandHandler.COMMAND_HELP}"
             )
-            await TelegramCommandHandler.run_help(update=Update(update_id=res.id, message=res), context=context)
+            await TelegramCommandHandler.run_help(update=Update(update_id=res.id, message=res), _=None)
             return
 
         # find full name
@@ -178,8 +181,29 @@ class TelegramCommandHandler:
         )
 
     @staticmethod
-    async def run_av(update: Update, _):
-        await update.message.reply_text(TelegramCommandHandler.auto_reg_system.get_available_slots_as_string())
+    async def run_av(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        # send new message
+        sent_message_info = await update.message.reply_text(
+            "Danh sách các slot còn thiếu người:\n\n" +
+            TelegramCommandHandler.auto_reg_system.get_available_slots_as_string()
+        )
+        new_av_chat_id = sent_message_info.chat_id
+        new_av_message_id = sent_message_info.message_id
+
+        # try delete previous message
+        if TelegramCommandHandler.last_av_chat_id is not None and TelegramCommandHandler.last_av_chat_id is not None:
+            try:
+                await context.bot.deleteMessage(
+                    message_id=TelegramCommandHandler.last_av_message_id,
+                    chat_id=TelegramCommandHandler.last_av_chat_id
+                )
+            finally:
+                pass
+
+        # record id of current message
+        if new_av_chat_id is not None and new_av_message_id is not None:
+            TelegramCommandHandler.last_av_chat_id = new_av_chat_id
+            TelegramCommandHandler.last_av_message_id = new_av_message_id
 
     @staticmethod
     async def run_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -241,7 +265,7 @@ class TelegramCommandHandler:
         )
 
     @staticmethod
-    async def run_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def run_help(update: Update, _):
         response: str = "Sử dụng những cú pháp sau:\n"
         response += f"/{TelegramCommandHandler.COMMAND_REG} [tên 1], ..., [tên n] [slot]\t(đăng kí)\n"
         response += f"/{TelegramCommandHandler.COMMAND_DEREG} [tên 1], ..., [tên n] [slot]\t(hủy đăng kí)\n"

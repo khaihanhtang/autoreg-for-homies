@@ -1,6 +1,5 @@
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.exception.error_maker import ErrorMaker
-from auto_registration_system.exception.exception_last_word_not_found import LastWordNotFoundException
 from auto_registration_system.string_parser.string_parser import StringParser
 
 

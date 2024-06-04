@@ -38,14 +38,14 @@ class StringParser:
     def get_first_word(message: str) -> str:
         try:
             return message.split()[0]
-        except Exception as e:
+        except Exception:
             raise FirstWordNotFoundException
 
     @staticmethod
     def get_last_word(message: str) -> str:
         try:
             return message.split()[-1]
-        except Exception as e:
+        except Exception:
             raise LastWordNotFoundException
 
     @staticmethod
