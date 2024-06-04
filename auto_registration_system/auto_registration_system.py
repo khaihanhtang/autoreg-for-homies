@@ -15,6 +15,10 @@ class AutoRegistrationSystem:
     def __init__(self):
         self._data: RegistrationData or None = None
 
+    @property
+    def data(self):
+        return self._data
+
     @staticmethod
     def convert_registrations_to_string(data: RegistrationData) -> str or None:
         if data is None:

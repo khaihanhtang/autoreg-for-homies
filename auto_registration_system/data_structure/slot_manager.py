@@ -39,8 +39,26 @@ class SlotManager:
                 if reservation is None:
                     break
                 self._players.append(reservation.name)
-            except Exception as e:
+            finally:
                 break
+
+    def is_in_players(self, proposed_name: str) -> bool:
+        for name in self._players:
+            if proposed_name == name:
+                return True
+        return False
+
+    def is_in_reservations(self, proposed_name: str) -> bool:
+        for reservation in self._reservations:
+            if proposed_name == reservation.name:
+                return True
+        return False
+
+    def get_reservation(self, proposed_name: str) -> Reservation or None:
+        for reservation in self._reservations:
+            if proposed_name == reservation.name:
+                return reservation
+        return None
 
     def is_in_any_list(self, proposed_name: str) -> bool:
         for name in self._players:
