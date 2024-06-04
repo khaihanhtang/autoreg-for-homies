@@ -36,13 +36,13 @@ async def write_data_and_update_bot_message_for_full_list(
     if last_chat_id is not None and last_message_id is not None:
         try:
             await context.bot.deleteMessage(message_id=last_message_id, chat_id=last_chat_id)
-        except Exception as e:
+        finally:
             pass
     last_chat_id = new_chat_id
     last_message_id = new_message_id
 
 
-async def run_hello(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def run_hello(update: Update, _):
     print(update.message.text)
     await update.message.reply_text(f'Chào {update.effective_user.first_name}')
 
@@ -51,7 +51,7 @@ async def run_retrieve(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await write_data_and_update_bot_message_for_full_list(update=update, context=context, message=None)
 
 
-async def run_av(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def run_av(update: Update, _):
     await update.message.reply_text(auto_reg_system.get_available_slots_as_string())
 
 
@@ -78,11 +78,11 @@ async def run_dereg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await write_data_and_update_bot_message_for_full_list(update=update, context=context, message=message)
 
 
-async def run_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def run_admin(update: Update, _):
     await update.message.reply_text(AutoRegistrationSystem.get_admin_list_as_string())
 
 
-async def run_command_not_found(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def run_command_not_found(update: Update, _):
     await update.message.reply_text("Sai lệnh!")
 
 
@@ -94,7 +94,7 @@ async def run_allplayable(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await write_data_and_update_bot_message_for_full_list(update=update, context=context, message=message)
 
 
-async def run_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def run_help(update: Update, _):
     response: str = "Sử dụng những cú pháp sau:\n"
     response += f"/reg [tên 1], ..., [tên n] [slot]\t(đăng kí)\n"
     response += f"/dereg [tên 1], ..., [tên n] [slot]\t(hủy đăng kí)\n"
@@ -122,14 +122,14 @@ app = (
 
 app.add_handler(CommandHandler("hello", run_hello))
 app.add_handler(CommandHandler("retrieve", run_retrieve))
-app.add_handler(CommandHandler("all", run_retrieve)) # same as /retrieve
+app.add_handler(CommandHandler("all", run_retrieve))    # same as /retrieve
 app.add_handler(CommandHandler("new", run_new))
 app.add_handler(CommandHandler("reg", run_reg))
-app.add_handler(CommandHandler("rg", run_reg)) # same as /reg
+app.add_handler(CommandHandler("rg", run_reg))  # same as /reg
 app.add_handler(CommandHandler("reserve", run_reserve))
-app.add_handler(CommandHandler("rs", run_reserve)) # same as /reserve
+app.add_handler(CommandHandler("rs", run_reserve))  # same as /reserve
 app.add_handler(CommandHandler("dereg", run_dereg))
-app.add_handler(CommandHandler("drg", run_dereg)) # same as /drg
+app.add_handler(CommandHandler("drg", run_dereg))   # same as /drg
 app.add_handler(CommandHandler("admin", run_admin))
 app.add_handler(CommandHandler("av", run_av))
 app.add_handler(CommandHandler("allplayable", run_allplayable))
