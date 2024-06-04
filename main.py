@@ -1,13 +1,41 @@
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, CallbackQueryHandler
 from telegram.ext import filters
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
+from auto_registration_system.data_structure.registration_data import RegistrationData
 
 token: str = input("Enter bot token: ")
 
 auto_reg_system = AutoRegistrationSystem()
 last_chat_id = None
 last_message_id = None
+
+def make_buttons_for_registration():
+    dictionary = {"Name": "a", "Language": "b", "API": "c"}
+
+    buttons = []
+
+    for key, value in dictionary.items():
+        buttons.append(
+            [InlineKeyboardButton(text=key, callback_data=value)]
+        )
+    keyboard = InlineKeyboardMarkup(buttons)
+    return keyboard
+
+
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Parses the CallbackQuery and updates the message text."""
+    query = update.callback_query
+
+    # CallbackQueries need to be answered, even if no notification to the user is needed
+    # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
+    await query.answer()
+
+    print(query)
+
+    if query.data == "a":
+        res = await context.bot.send_message(chat_id=query.message.chat.id, text="/reg Hanh f")
+        await run_reg(update=Update(update_id=res.id, message=res), context=context)    # TODO: update_id needs to be changed to random integer
 
 
 async def write_data_and_update_bot_message_for_full_list(
@@ -22,7 +50,7 @@ async def write_data_and_update_bot_message_for_full_list(
     new_chat_id = None
     new_message_id = None
     if all_slots_as_string is not None:
-        sent_message_info = await update.message.reply_text(all_slots_as_string)
+        sent_message_info = await update.message.reply_text(text=all_slots_as_string, reply_markup=make_buttons_for_registration())
         new_chat_id = sent_message_info.chat_id
         new_message_id = sent_message_info.message_id
     else:
@@ -135,5 +163,6 @@ app.add_handler(CommandHandler("av", run_av))
 app.add_handler(CommandHandler("allplayable", run_allplayable))
 app.add_handler(CommandHandler("help", run_help))
 app.add_handler(MessageHandler(filters.COMMAND, run_command_not_found))
+app.add_handler(CallbackQueryHandler(button))
 
 app.run_polling()
