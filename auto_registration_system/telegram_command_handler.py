@@ -85,7 +85,7 @@ class TelegramCommandHandler:
             return
 
         # find full name
-        full_name = query.message.chat.full_name
+        full_name = query.from_user.full_name
         char_list = list(full_name)
         for i, c in enumerate(char_list):
             if c == ",":
