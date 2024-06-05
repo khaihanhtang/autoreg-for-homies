@@ -56,6 +56,14 @@ class RegistrationData:
         raise ErrorMaker.make_slot_not_found_exception(message=slot_label)
 
     def move_all_playable_players(self):
-        for datevenue in self._bookings_by_datevenue:
-            for slot_label in self._bookings_by_datevenue[datevenue]:
-                self._bookings_by_datevenue[datevenue][slot_label].move_all_playable_players()
+        for date_venue in self._bookings_by_datevenue:
+            for slot_label in self._bookings_by_datevenue[date_venue]:
+                self._bookings_by_datevenue[date_venue][slot_label].move_all_playable_players()
+
+    def collect_slot_labels_involving_user(self, full_name: str) -> list[str]:
+        res: list[str] = list()
+        for date_venue in self._bookings_by_datevenue:
+            for slot_label, slot in self._bookings_by_datevenue[date_venue].items():
+                if slot.is_in_any_list(proposed_name=full_name):
+                    res.append(slot_label)
+        return res

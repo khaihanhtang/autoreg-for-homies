@@ -1,4 +1,3 @@
-import telegram._message
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, ReplyKeyboardMarkup, \
     ReplyKeyboardRemove, ForceReply
 from telegram.ext import ContextTypes
@@ -8,6 +7,7 @@ from auto_registration_system.data_structure.registration_data import Registrati
 from auto_registration_system.string_parser.string_parser import StringParser
 
 import logging
+import time
 
 
 class TelegramCommandHandler:
@@ -38,6 +38,7 @@ class TelegramCommandHandler:
     COMMAND_HELP = "help"
     CALLBACK_DATA_HELP = f"_{COMMAND_HELP}"
     CALLBACK_DATA_ALL = f"_{COMMAND_ALL}"
+    CALLBACK_DATA_DEREG = f"_{COMMAND_DEREG}"
 
     SECOND_CLICK_TO_DEREGISTER = False
 
@@ -51,7 +52,9 @@ class TelegramCommandHandler:
             return await update.message.reply_text(text=text, reply_markup=reply_markup)
         except Exception as e:
             logging.info(msg=f"We caught an error when replying message: {repr(e)}")
-            raise e
+            time.sleep(0.1)
+            await TelegramCommandHandler.reply_message(update=update, text="Vừa có lỗi kết nối! Đang thử lại!")
+            return await TelegramCommandHandler.reply_message(update=update, text=text, reply_markup=reply_markup)
 
     @staticmethod
     def make_inline_buttons_for_registration(data: RegistrationData) -> InlineKeyboardMarkup:
@@ -73,6 +76,10 @@ class TelegramCommandHandler:
 
         # add buttons all and help
         button_list.append([
+            InlineKeyboardButton(
+                text=TelegramCommandHandler.COMMAND_DRG,
+                callback_data=TelegramCommandHandler.CALLBACK_DATA_DEREG
+            ),
             InlineKeyboardButton(
                 text=TelegramCommandHandler.COMMAND_ALL,
                 callback_data=TelegramCommandHandler.CALLBACK_DATA_ALL
@@ -128,6 +135,27 @@ class TelegramCommandHandler:
                 text=f"/{TelegramCommandHandler.COMMAND_HELP}\t{identity_message}"
             )
             await TelegramCommandHandler.run_help(update=Update(update_id=res.id, message=res), _=None)
+            return
+        elif query.data == TelegramCommandHandler.CALLBACK_DATA_DEREG:
+            slot_labels_involving_user = (TelegramCommandHandler
+                                          .auto_reg_system.data
+                                          .collect_slot_labels_involving_user(full_name=full_name)
+                                          )
+            slot_labels_involving_user_list = [[f"/{TelegramCommandHandler.COMMAND_DRG} {full_name} {slot_label}"]
+                                              for slot_label in slot_labels_involving_user]
+            reply_keyboard_markup = ReplyKeyboardMarkup(slot_labels_involving_user_list)
+            res = await context.bot.send_message(
+                chat_id=query.message.chat.id,
+                text=f"Yêu cầu hủy đăng kí từ {full_name}!"
+            )
+            message = "Không có slot phù hợp để hủy"
+            if len(slot_labels_involving_user_list) > 0:
+                message = "Vui lòng chọn từ bàn phím!"
+            await TelegramCommandHandler.reply_message(
+                update=Update(update_id=res.id, message=res),
+                text=message,
+                reply_markup=reply_keyboard_markup
+            )
             return
 
         slot_label = query.data
