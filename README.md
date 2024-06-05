@@ -1,4 +1,4 @@
-This is the source code for an auto-registering badminton slots, dedicated to badminton group Homies.
+This is the source code for auto-registering badminton slots, dedicated to badminton group Homies. This source code requires running on a server to handle requests from users via a Telegram bot.
 
 ## License
 This source code `autoreg-for-homies` is licensed under [Apache License 2.0](https://github.com/khaihanhtang/autoreg-for-homies/blob/main/LICENSE).
