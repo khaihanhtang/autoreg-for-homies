@@ -73,22 +73,6 @@ class TelegramCommandHandler:
         query = update.callback_query
         await query.answer()
 
-        # handle special case for all and help
-        if query.data == TelegramCommandHandler.CALLBACK_DATA_ALL:
-            res = await context.bot.send_message(
-                chat_id=query.message.chat.id,
-                text=f"/{TelegramCommandHandler.COMMAND_ALL}"
-            )
-            await TelegramCommandHandler.run_retrieve(update=Update(update_id=res.id, message=res), context=context)
-            return
-        elif query.data == TelegramCommandHandler.CALLBACK_DATA_HELP:
-            res = await context.bot.send_message(
-                chat_id=query.message.chat.id,
-                text=f"/{TelegramCommandHandler.COMMAND_HELP}"
-            )
-            await TelegramCommandHandler.run_help(update=Update(update_id=res.id, message=res), _=None)
-            return
-
         # find full name
         full_name = query.from_user.full_name
         char_list = list(full_name)
@@ -96,6 +80,24 @@ class TelegramCommandHandler:
             if c == ",":
                 char_list[i] = ""
         full_name = StringParser.split_names(message="".join(char_list))[0]
+
+        identity_message = f"(from {full_name})"
+
+        # handle special case for all and help
+        if query.data == TelegramCommandHandler.CALLBACK_DATA_ALL:
+            res = await context.bot.send_message(
+                chat_id=query.message.chat.id,
+                text=f"/{TelegramCommandHandler.COMMAND_ALL}\t{identity_message}"
+            )
+            await TelegramCommandHandler.run_retrieve(update=Update(update_id=res.id, message=res), context=context)
+            return
+        elif query.data == TelegramCommandHandler.CALLBACK_DATA_HELP:
+            res = await context.bot.send_message(
+                chat_id=query.message.chat.id,
+                text=f"/{TelegramCommandHandler.COMMAND_HELP}\t{identity_message}"
+            )
+            await TelegramCommandHandler.run_help(update=Update(update_id=res.id, message=res), _=None)
+            return
 
         slot_label = query.data
         slot = TelegramCommandHandler.auto_reg_system.data.get_slot(slot_label=slot_label)
