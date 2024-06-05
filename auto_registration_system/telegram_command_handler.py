@@ -38,7 +38,7 @@ class TelegramCommandHandler:
     COMMAND_HELP = "help"
     CALLBACK_DATA_HELP = f"_{COMMAND_HELP}"
     CALLBACK_DATA_ALL = f"_{COMMAND_ALL}"
-    CALLBACK_DATA_DEREG = f"_{COMMAND_DEREG}"
+    CALLBACK_DATA_DRG = f"_{COMMAND_DRG}"
 
     SECOND_CLICK_TO_DEREGISTER = False
 
@@ -76,10 +76,10 @@ class TelegramCommandHandler:
 
         # add buttons all and help
         button_list.append([
-            InlineKeyboardButton(
-                text=TelegramCommandHandler.COMMAND_DRG,
-                callback_data=TelegramCommandHandler.CALLBACK_DATA_DEREG
-            ),
+            # InlineKeyboardButton(
+            #     text=TelegramCommandHandler.COMMAND_DRG,
+            #     callback_data=TelegramCommandHandler.CALLBACK_DATA_DRG
+            # ),
             InlineKeyboardButton(
                 text=TelegramCommandHandler.COMMAND_ALL,
                 callback_data=TelegramCommandHandler.CALLBACK_DATA_ALL
@@ -136,7 +136,7 @@ class TelegramCommandHandler:
             )
             await TelegramCommandHandler.run_help(update=Update(update_id=res.id, message=res), _=None)
             return
-        elif query.data == TelegramCommandHandler.CALLBACK_DATA_DEREG:
+        elif query.data == TelegramCommandHandler.CALLBACK_DATA_DRG:
             slot_labels_involving_user = (TelegramCommandHandler
                                           .auto_reg_system.data
                                           .collect_slot_labels_involving_user(full_name=full_name)
@@ -173,7 +173,7 @@ class TelegramCommandHandler:
             if use_reg:
                 res = await context.bot.send_message(
                     chat_id=query.message.chat.id,
-                    text=f"/{TelegramCommandHandler.COMMAND_REG} {full_name} {slot_label}"
+                    text=f"/{TelegramCommandHandler.COMMAND_RG} {full_name} {slot_label}"
                 )
                 await TelegramCommandHandler.run_reg(update=Update(update_id=res.id, message=res), context=context)
             else:
@@ -185,7 +185,7 @@ class TelegramCommandHandler:
         else:
             res = await context.bot.send_message(
                 chat_id=query.message.chat.id,
-                text=f"/{TelegramCommandHandler.COMMAND_REG} {full_name} {slot_label}"
+                text=f"/{TelegramCommandHandler.COMMAND_RG} {full_name} {slot_label}"
             )
             await TelegramCommandHandler.run_reg(update=Update(update_id=res.id, message=res), context=context)
 
