@@ -1,9 +1,13 @@
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
+import telegram._message
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, ReplyKeyboardMarkup, \
+    ReplyKeyboardRemove, ForceReply
 from telegram.ext import ContextTypes
 
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.string_parser.string_parser import StringParser
+
+import logging
 
 
 class TelegramCommandHandler:
@@ -38,6 +42,18 @@ class TelegramCommandHandler:
     SECOND_CLICK_TO_DEREGISTER = False
 
     @staticmethod
+    async def reply_message(
+            update: Update,
+            text: str,
+            reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply | None = None,
+    ):
+        try:
+            return await update.message.reply_text(text=text, reply_markup=reply_markup)
+        except Exception as e:
+            logging.info(msg=f"We caught an error when replying message: {repr(e)}")
+            raise e
+
+    @staticmethod
     def make_inline_buttons_for_registration(data: RegistrationData) -> InlineKeyboardMarkup:
         button_count = 0
         button_list = []
@@ -69,17 +85,32 @@ class TelegramCommandHandler:
         return InlineKeyboardMarkup(inline_keyboard=button_list)
 
     @staticmethod
-    async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        query = update.callback_query
-        await query.answer()
-
-        # find full name
+    def get_full_name_from_query(query: CallbackQuery) -> str:
         full_name = query.from_user.full_name
         char_list = list(full_name)
         for i, c in enumerate(char_list):
             if c == ",":
                 char_list[i] = ""
         full_name = StringParser.split_names(message="".join(char_list))[0]
+        return full_name
+
+    @staticmethod
+    def get_full_name_from_update(update: Update) -> str:
+        full_name = update.message.from_user.full_name
+        char_list = list(full_name)
+        for i, c in enumerate(char_list):
+            if c == ",":
+                char_list[i] = ""
+        full_name = StringParser.split_names(message="".join(char_list))[0]
+        return full_name
+
+    @staticmethod
+    async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        query = update.callback_query
+        await query.answer()
+
+        # find full name
+        full_name = TelegramCommandHandler.get_full_name_from_query(query=query)
 
         identity_message = f"(from {full_name})"
 
@@ -142,7 +173,8 @@ class TelegramCommandHandler:
         new_chat_id = None
         new_message_id = None
         if all_slots_as_string is not None:
-            sent_message_info = await update.message.reply_text(
+            sent_message_info = await TelegramCommandHandler.reply_message(
+                update=update,
                 text=all_slots_as_string,
                 reply_markup=TelegramCommandHandler.make_inline_buttons_for_registration(
                     data=TelegramCommandHandler.auto_reg_system.data
@@ -151,11 +183,11 @@ class TelegramCommandHandler:
             new_chat_id = sent_message_info.chat_id
             new_message_id = sent_message_info.message_id
         else:
-            await update.message.reply_text("Danh sách chơi trống!")
+            await TelegramCommandHandler.reply_message(update=update, text="Danh sách chơi trống!")
 
         # inform message
         if message is not None:
-            await update.message.reply_text(message)
+            await TelegramCommandHandler.reply_message(update=update, text=message)
 
         # delete previous message
         if TelegramCommandHandler.last_chat_id is not None and TelegramCommandHandler.last_message_id is not None:
@@ -170,12 +202,19 @@ class TelegramCommandHandler:
         TelegramCommandHandler.last_message_id = new_message_id
 
     @staticmethod
+    def log_message_from_user(update: Update):
+        logging.info(
+            msg=f"{update.message.text} (from user {TelegramCommandHandler.get_full_name_from_update(update=update)})"
+        )
+
+    @staticmethod
     async def run_hello(update: Update, _):
-        print(update.message.text)
-        await update.message.reply_text(f'Chào {update.effective_user.first_name}')
+        TelegramCommandHandler.log_message_from_user(update=update)
+        await TelegramCommandHandler.reply_message(update=update, text=f'Chào {update.effective_user.first_name}')
 
     @staticmethod
     async def run_retrieve(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        TelegramCommandHandler.log_message_from_user(update=update)
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
             context=context,
@@ -184,10 +223,13 @@ class TelegramCommandHandler:
 
     @staticmethod
     async def run_av(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        TelegramCommandHandler.log_message_from_user(update=update)
+
         # send new message
-        sent_message_info = await update.message.reply_text(
-            "Danh sách các slot còn thiếu người:\n\n" +
-            TelegramCommandHandler.auto_reg_system.get_available_slots_as_string()
+        sent_message_info = await TelegramCommandHandler.reply_message(
+            update=update,
+            text="Danh sách các slot còn thiếu người:\n\n" +
+                 TelegramCommandHandler.auto_reg_system.get_available_slots_as_string()
         )
         new_av_chat_id = sent_message_info.chat_id
         new_av_message_id = sent_message_info.message_id
@@ -209,6 +251,8 @@ class TelegramCommandHandler:
 
     @staticmethod
     async def run_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        TelegramCommandHandler.log_message_from_user(update=update)
+
         message = TelegramCommandHandler.auto_reg_system.handle_new(
             username=update.effective_user.username,
             message=update.message.text
@@ -221,6 +265,8 @@ class TelegramCommandHandler:
 
     @staticmethod
     async def run_reg(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        TelegramCommandHandler.log_message_from_user(update=update)
+
         message = TelegramCommandHandler.auto_reg_system.handle_reg(message=update.message.text)
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
@@ -230,6 +276,8 @@ class TelegramCommandHandler:
 
     @staticmethod
     async def run_reserve(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        TelegramCommandHandler.log_message_from_user(update=update)
+
         message = TelegramCommandHandler.auto_reg_system.handle_reserve(message=update.message.text)
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
@@ -239,6 +287,8 @@ class TelegramCommandHandler:
 
     @staticmethod
     async def run_dereg(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        TelegramCommandHandler.log_message_from_user(update=update)
+
         message = TelegramCommandHandler.auto_reg_system.handle_dereg(message=update.message.text)
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
@@ -248,14 +298,23 @@ class TelegramCommandHandler:
 
     @staticmethod
     async def run_admin(update: Update, _):
-        await update.message.reply_text(AutoRegistrationSystem.get_admin_list_as_string())
+        TelegramCommandHandler.log_message_from_user(update=update)
+
+        await TelegramCommandHandler.reply_message(
+            update=update,
+            text=AutoRegistrationSystem.get_admin_list_as_string()
+        )
 
     @staticmethod
     async def run_command_not_found(update: Update, _):
-        await update.message.reply_text("Sai lệnh!")
+        TelegramCommandHandler.log_message_from_user(update=update)
+
+        await TelegramCommandHandler.reply_message(update=update, text="Sai lệnh!")
 
     @staticmethod
     async def run_allplayable(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        TelegramCommandHandler.log_message_from_user(update=update)
+
         message = TelegramCommandHandler.auto_reg_system.handle_allplayable(
             username=update.effective_user.username,
             message=update.message.text
@@ -268,6 +327,8 @@ class TelegramCommandHandler:
 
     @staticmethod
     async def run_help(update: Update, _):
+        TelegramCommandHandler.log_message_from_user(update=update)
+
         response: str = "Sử dụng những cú pháp sau:\n"
         response += f"/{TelegramCommandHandler.COMMAND_REG} [tên 1], ..., [tên n] [slot]\t(đăng kí)\n"
         response += f"/{TelegramCommandHandler.COMMAND_DEREG} [tên 1], ..., [tên n] [slot]\t(hủy đăng kí)\n"
@@ -281,4 +342,4 @@ class TelegramCommandHandler:
         response += f"/{TelegramCommandHandler.COMMAND_RS}\t(giống như /reserve)\n"
         response += f"\n"
         response += f"Hướng dẫn chi tiết: https://hackmd.io/@1UKfawZER96uwy_xohcquQ/B1fyW-c4R"
-        await update.message.reply_text(response)
+        await TelegramCommandHandler.reply_message(update=update, text=response)

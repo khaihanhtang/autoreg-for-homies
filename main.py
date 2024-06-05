@@ -2,7 +2,12 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Cal
 from telegram.ext import filters
 from auto_registration_system.telegram_command_handler import TelegramCommandHandler
 
+import logging
+
 token: str = input("Enter bot token: ")
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='activities.log', encoding='utf-8', level=logging.DEBUG)
 
 app = (
     ApplicationBuilder()
