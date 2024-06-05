@@ -52,7 +52,7 @@ class TelegramCommandHandler:
             return await update.message.reply_text(text=text, reply_markup=reply_markup)
         except Exception as e:
             logging.info(msg=f"We caught an error when replying message: {repr(e)}")
-            time.sleep(0.1)
+            time.sleep(10)
             await TelegramCommandHandler.reply_message(update=update, text="Vừa có lỗi kết nối! Đang thử lại!")
             return await TelegramCommandHandler.reply_message(update=update, text=text, reply_markup=reply_markup)
 
