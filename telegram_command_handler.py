@@ -9,10 +9,14 @@ from auto_registration_system.string_parser.string_parser import StringParser
 import logging
 import time
 
+from config import Config
+
 
 class TelegramCommandHandler:
 
-    auto_reg_system = AutoRegistrationSystem()
+    auto_reg_system: AutoRegistrationSystem = AutoRegistrationSystem(
+        admin_list=Config.admin_list, chat_id=Config.chat_id
+    )
 
     NUM_BUTTONS_PER_LINE = 3
 
@@ -142,7 +146,7 @@ class TelegramCommandHandler:
                                           .collect_slot_labels_involving_user(full_name=full_name)
                                           )
             slot_labels_involving_user_list = [[f"/{TelegramCommandHandler.COMMAND_DRG} {full_name} {slot_label}"]
-                                              for slot_label in slot_labels_involving_user]
+                                               for slot_label in slot_labels_involving_user]
             reply_keyboard_markup = ReplyKeyboardMarkup(slot_labels_involving_user_list)
             res = await context.bot.send_message(
                 chat_id=query.message.chat.id,
@@ -295,7 +299,9 @@ class TelegramCommandHandler:
     async def run_reg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         TelegramCommandHandler.log_message_from_user(update=update)
 
-        message = TelegramCommandHandler.auto_reg_system.handle_reg(message=update.message.text)
+        message = TelegramCommandHandler.auto_reg_system.handle_reg(
+            message=update.message.text, chat_id=update.message.chat_id
+        )
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
             context=context,
@@ -306,7 +312,9 @@ class TelegramCommandHandler:
     async def run_reserve(update: Update, context: ContextTypes.DEFAULT_TYPE):
         TelegramCommandHandler.log_message_from_user(update=update)
 
-        message = TelegramCommandHandler.auto_reg_system.handle_reserve(message=update.message.text)
+        message = TelegramCommandHandler.auto_reg_system.handle_reserve(
+            message=update.message.text, chat_id=update.message.chat_id
+        )
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
             context=context,
@@ -317,7 +325,9 @@ class TelegramCommandHandler:
     async def run_dereg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         TelegramCommandHandler.log_message_from_user(update=update)
 
-        message = TelegramCommandHandler.auto_reg_system.handle_dereg(message=update.message.text)
+        message = TelegramCommandHandler.auto_reg_system.handle_dereg(
+            message=update.message.text, chat_id=update.message.chat_id
+        )
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
             context=context,
@@ -330,7 +340,7 @@ class TelegramCommandHandler:
 
         await TelegramCommandHandler.reply_message(
             update=update,
-            text=AutoRegistrationSystem.get_admin_list_as_string()
+            text=TelegramCommandHandler.auto_reg_system.get_admin_list_as_string()
         )
 
     @staticmethod
@@ -345,7 +355,8 @@ class TelegramCommandHandler:
 
         message = TelegramCommandHandler.auto_reg_system.handle_allplayable(
             username=update.effective_user.username,
-            message=update.message.text
+            message=update.message.text,
+            chat_id=update.message.chat_id
         )
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,

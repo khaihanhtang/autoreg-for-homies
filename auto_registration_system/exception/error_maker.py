@@ -33,6 +33,10 @@ class ErrorMaker:
         return Exception(f"Lệnh này cần quyền admin!")
 
     @staticmethod
+    def make_chat_id_enforcement() -> Exception:
+        return Exception(f"Bạn không thể sử dụng bot ở đây!")
+
+    @staticmethod
     def make_playable_player_not_found_exception() -> Exception:
         return Exception(f"Không tìm thấy người chơi để dự bị!")
 

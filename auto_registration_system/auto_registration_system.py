@@ -1,19 +1,22 @@
-from .command_handler.handler_allplayable import AllplayableHandler
-from .command_handler.handler_av import AvHandler
-from .command_handler.handler_dereg import DeregHandler
-from .command_handler.handler_reg import RegHandler
-from .command_handler.handler_reserve import ReserveHandler
-from .data_structure.registration_data import RegistrationData
-from .data_structure.admin_manager import AdminManager
-from .command_handler.handler_new import NewHandler
-from .term import Term
-from .string_parser.string_parser import StringParser
+from auto_registration_system.data_structure.chat_manager import ChatManager
+from auto_registration_system.command_handler.handler_allplayable import AllplayableHandler
+from auto_registration_system.command_handler.handler_av import AvHandler
+from auto_registration_system.command_handler.handler_dereg import DeregHandler
+from auto_registration_system.command_handler.handler_reg import RegHandler
+from auto_registration_system.command_handler.handler_reserve import ReserveHandler
+from auto_registration_system.data_structure.registration_data import RegistrationData
+from auto_registration_system.data_structure.admin_manager import AdminManager
+from auto_registration_system.command_handler.handler_new import NewHandler
+from auto_registration_system.term import Term
+from auto_registration_system.string_parser.string_parser import StringParser
 
 
 class AutoRegistrationSystem:
 
-    def __init__(self):
+    def __init__(self, admin_list: set[str], chat_id: int):
         self._data: RegistrationData or None = None
+        self._admin_manager = AdminManager(admin_list=admin_list)
+        self._chat_manager = ChatManager(chat_id=chat_id)
 
     @property
     def data(self):
@@ -42,7 +45,7 @@ class AutoRegistrationSystem:
 
     def handle_new(self, username: str, message: str) -> str:
         try:
-            AdminManager.enforce_admin(username=username)
+            self._admin_manager.enforce_admin(username=username)
         except Exception as e:
             return repr(e)
 
@@ -68,37 +71,40 @@ class AutoRegistrationSystem:
             return "Không còn slot trống!"
         return res
 
-    def handle_reg(self, message: str) -> str:
+    def handle_reg(self, message: str, chat_id: int) -> str:
         try:
+            self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
             return RegHandler.handle(message=message, data=self._data)
         except Exception as e:
             return repr(e)
 
-    def handle_reserve(self, message: str) -> str:
+    def handle_reserve(self, message: str, chat_id: int) -> str:
         try:
+            self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
             return ReserveHandler.handle(message=message, data=self._data)
         except Exception as e:
             return repr(e)
 
-    def handle_dereg(self, message: str) -> str:
+    def handle_dereg(self, message: str, chat_id: int) -> str:
         try:
+            self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
             return DeregHandler.handle(message=message, data=self._data)
         except Exception as e:
             return repr(e)
 
-    @staticmethod
-    def get_admin_list_as_string() -> str:
-        return str(AdminManager.admin_list)
+    def get_admin_list_as_string(self) -> str:
+        return str(self._admin_manager.admin_list)
 
-    def handle_allplayable(self, username: str, message: str) -> str:
+    def handle_allplayable(self, username: str, message: str, chat_id: int) -> str:
         try:
-            AdminManager.enforce_admin(username=username)
+            self._chat_manager.enforce_chat_id(chat_id=chat_id)
+            self._admin_manager.enforce_admin(username=username)
         except Exception as e:
             return repr(e)
 
