@@ -28,8 +28,8 @@ class DeregHandler:
                     index = int(name) - 1
                     if index < 0 or index >= slot.max_num_players:
                         response += f"Chỉ số '{index + 1}' không phù hợp!\n"
-                    elif slot.players[index] == "":
-                        response += f"Chỉ số '{index + 1}' đã bị xóa!\n"
+                    elif index >= len(slot.players) or slot.players[index] == "":
+                        response += f"Chỉ số '{index + 1}' đã bị xóa hoặc không tồn tại!\n"
                     else:
                         response += f"{slot.players[index]} (từ chỉ số {index + 1}) vừa được xóa khỏi slot {slot_label}!\n"
                         slot.players[index] = ""
