@@ -43,3 +43,7 @@ class ErrorMaker:
     @staticmethod
     def make_single_line_not_satisfied_exception() -> Exception:
         return Exception(f"Lệnh này chỉ được phép trên 1 dòng!")
+
+    @staticmethod
+    def make_message_not_containing_alpha_exception(message: str) -> Exception:
+        return Exception(f"'{message}' phải tồn tại ít nhất một chữ cái!")

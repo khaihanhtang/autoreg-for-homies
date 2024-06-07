@@ -20,6 +20,7 @@ class ReserveHandler:
             if len(name) > 0:
                 count_processed += 1
                 try:
+                    StringParser.enforce_message_containing_alpha(message=name)
                     data.reserve_player(slot_label=slot_label, player=name)
                     response += f"{name} vừa được thêm vào dự bị slot {slot_label}.\n"
                 except Exception as e:

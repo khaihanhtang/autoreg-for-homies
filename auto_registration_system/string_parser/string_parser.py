@@ -70,6 +70,15 @@ class StringParser:
         return res
 
     @staticmethod
+    def enforce_message_containing_alpha(message: str):
+        containing_alpha: bool = False
+        for character in list(message):
+            if character.isalpha():
+                containing_alpha = True
+        if not containing_alpha:
+            raise ErrorMaker.make_message_not_containing_alpha_exception(message=message)
+
+    @staticmethod
     def enforce_single_line_message(message: str):
         if '\n' in message:
             raise ErrorMaker.make_single_line_not_satisfied_exception()
