@@ -31,7 +31,7 @@ class DeregHandler:
                     elif slot.players[index] == "":
                         response += f"Chỉ số '{index + 1}' đã bị xóa!\n"
                     else:
-                        response += f"{name} (từ chỉ số {index + 1}) vừa được xóa khỏi slot {slot_label}!\n"
+                        response += f"{slot.players[index]} (từ chỉ số {index + 1}) vừa được xóa khỏi slot {slot_label}!\n"
                         slot.players[index] = ""
                 except Exception:
                     found: bool = False
@@ -43,24 +43,25 @@ class DeregHandler:
                     if not found:
                         for i, reservation in enumerate(slot.reservations):
                             if reservation.name == name:
-                                slot.reservations[i] = ""
+                                slot.reservations[i] = Reservation(name="", is_playable=False)
                                 found = True
                                 break
                     if found:
                         response += f"{name} vừa được xóa khỏi slot {slot_label}!\n"
                     else:
                         response += f"{name} không tồn tại trong slot {slot_label}!\n"
-        # TODO: clean empty elements
-        new_players = list[str]
-        new_reservations = list[Reservation]
+        # clean empty elements
+        new_players: list[str] = list()
+        new_reservations: list[Reservation] = list()
         for player in slot.players:
             if player != "":
                 new_players.append(player)
         for reservation in slot.reservations:
-            if reservation.name != "":
+            if reservation is not None and reservation.name != "":
                 new_reservations.append(reservation)
         slot.players = new_players
         slot.reservations = new_reservations
+        slot.move_all_playable_players()
         if count_processed == 0:
             return "Không có gì thay đổi!"
 
