@@ -65,8 +65,8 @@ class TelegramCommandHandler:
         button_count = 0
         button_list = []
         current_line_button_list = None
-        for date_venue in data.bookings_by_datevenue:
-            for slot_label in data.bookings_by_datevenue[date_venue]:
+        for date_venue in data.bookings_by_date_venue:
+            for slot_label in data.bookings_by_date_venue[date_venue]:
                 button = InlineKeyboardButton(text=f"slot {slot_label}", callback_data=slot_label)
                 if button_count % TelegramCommandHandler.NUM_BUTTONS_PER_LINE == 0:
                     if current_line_button_list is not None:

@@ -1,3 +1,5 @@
+import logging
+
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.string_parser.string_parser import StringParser
 from ..exception.error_maker import ErrorMaker
@@ -10,9 +12,8 @@ class NewHandler:
     def is_date_venue_line(message: str) -> bool:
         try:
             first_word: str = StringParser.get_first_word(message=message)
-        finally:
-            pass
-
+        except Exception:
+            return False
         if first_word in {Term.DATE_VENUE, Term.DATE_VENUE_SHORTENED}:
             return True
         return False
@@ -61,17 +62,17 @@ class NewHandler:
 
     @staticmethod
     def handle(message: str, data: RegistrationData) -> bool:
-        current_date_venue = None
-        current_slot_label = None
+        current_date_venue: str or None = None
+        current_slot_label: str or None = None
         count_processed: int = 0
         for line in message.splitlines():
             current_message = line.strip()
             count_processed += 1
-            if NewHandler.is_date_venue_line(message=line):
-                current_date_venue = StringParser.remove_first_word(message=line)
-                data.insert_datevenue(datevenue_name=current_date_venue)
-            elif NewHandler.is_slot_line(message=line):
-                current_slot_label: str = NewHandler.get_slot_label(message=current_message)
+            if NewHandler.is_date_venue_line(message=current_message):
+                current_date_venue = StringParser.remove_first_word(message=current_message)
+                data.insert_date_venue(date_venue=current_date_venue)
+            elif NewHandler.is_slot_line(message=current_message):
+                current_slot_label = NewHandler.get_slot_label(message=current_message)
                 current_message = StringParser.remove_first_word(message=current_message)
 
                 try:
@@ -99,14 +100,12 @@ class NewHandler:
                     raise ErrorMaker.make_dv_not_found_exception(message=line)
 
                 data.insert_slot(
-                    datevenue=current_date_venue,
+                    date_venue=current_date_venue,
                     slot_label=current_slot_label,
                     slot_name=current_message,
                     max_num_players=max_num_players
                 )
-            elif NewHandler.is_player_line(message=line):
-                current_message = line.strip()
-
+            elif NewHandler.is_player_line(message=current_message):
                 current_player_label: str = NewHandler.get_player_label(message=current_message)
                 current_message = StringParser.remove_first_word(message=current_message)
 

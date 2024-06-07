@@ -8,11 +8,11 @@ class AvHandler:
         res = RegistrationData()
         if data is None:
             return res
-        for date_venue in data.bookings_by_datevenue:
+        for date_venue in data.bookings_by_date_venue:
             slot_container = dict()
-            for slot_label, slot in data.bookings_by_datevenue[date_venue].items():
+            for slot_label, slot in data.bookings_by_date_venue[date_venue].items():
                 if len(slot.players) < slot.max_num_players:
                     slot_container[slot_label] = slot
             if slot_container:
-                res.bookings_by_datevenue[date_venue] = slot_container
+                res.bookings_by_date_venue[date_venue] = slot_container
         return res

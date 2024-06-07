@@ -10,7 +10,7 @@ import logging
 token: str = input("Enter bot token: ")
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='activities.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='activities.log', encoding='utf-8', level=logging.INFO)
 
 app = (
     ApplicationBuilder()

@@ -4,31 +4,30 @@ from .slot_manager import SlotManager
 
 class RegistrationData:
     def __init__(self):
-        self._bookings_by_datevenue: dict = {}
+        self._bookings_by_date_venue: dict = {}
 
     @property
-    def bookings_by_datevenue(self):
-        return self._bookings_by_datevenue
+    def bookings_by_date_venue(self):
+        return self._bookings_by_date_venue
 
-    def insert_datevenue(self, datevenue_name: str):
-        if datevenue_name in self._bookings_by_datevenue:
-            raise ErrorMaker.make_dv_conflict_exception(message=datevenue_name)
-        self._bookings_by_datevenue[datevenue_name]: dict = {}
+    def insert_date_venue(self, date_venue: str):
+        if date_venue in self._bookings_by_date_venue:
+            raise ErrorMaker.make_dv_conflict_exception(message=date_venue)
+        self._bookings_by_date_venue[date_venue]: dict = {}
 
-    def insert_slot(self, datevenue: str, slot_label: str, slot_name: str, max_num_players: int):
-        if datevenue not in self._bookings_by_datevenue:
-            raise ErrorMaker.make_dv_not_found_exception(message=datevenue)
-        for datevenue in self._bookings_by_datevenue:
-            if slot_label in self._bookings_by_datevenue[datevenue]:
-                raise ErrorMaker.make_slot_conflict_exception(message=slot_label)
-        self._bookings_by_datevenue[datevenue][slot_label]: SlotManager = SlotManager(
+    def insert_slot(self, date_venue: str, slot_label: str, slot_name: str, max_num_players: int):
+        if date_venue not in self._bookings_by_date_venue:
+            raise ErrorMaker.make_dv_not_found_exception(message=date_venue)
+        if slot_label in self._bookings_by_date_venue[date_venue]:
+            raise ErrorMaker.make_slot_conflict_exception(message=slot_label)
+        self._bookings_by_date_venue[date_venue][slot_label]: SlotManager = SlotManager(
             slot_name=slot_name, max_num_players=max_num_players
         )
 
     def get_slot(self, slot_label) -> SlotManager or None:
-        for datevenue in self._bookings_by_datevenue:
-            if slot_label in self._bookings_by_datevenue[datevenue]:
-                return self._bookings_by_datevenue[datevenue][slot_label]
+        for date_venue in self._bookings_by_date_venue:
+            if slot_label in self._bookings_by_date_venue[date_venue]:
+                return self._bookings_by_date_venue[date_venue][slot_label]
         return None
 
     def register_player(self, slot_label: str, player: str):
@@ -56,14 +55,14 @@ class RegistrationData:
         raise ErrorMaker.make_slot_not_found_exception(message=slot_label)
 
     def move_all_playable_players(self):
-        for date_venue in self._bookings_by_datevenue:
-            for slot_label in self._bookings_by_datevenue[date_venue]:
-                self._bookings_by_datevenue[date_venue][slot_label].move_all_playable_players()
+        for date_venue in self._bookings_by_date_venue:
+            for slot_label in self._bookings_by_date_venue[date_venue]:
+                self._bookings_by_date_venue[date_venue][slot_label].move_all_playable_players()
 
     def collect_slot_labels_involving_user(self, full_name: str) -> list[str]:
         res: list[str] = list()
-        for date_venue in self._bookings_by_datevenue:
-            for slot_label, slot in self._bookings_by_datevenue[date_venue].items():
+        for date_venue in self._bookings_by_date_venue:
+            for slot_label, slot in self._bookings_by_date_venue[date_venue].items():
                 if slot.is_in_any_list(proposed_name=full_name):
                     res.append(slot_label)
         return res
