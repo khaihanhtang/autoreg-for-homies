@@ -47,12 +47,12 @@ class RegistrationData:
             return
         raise ErrorMaker.make_slot_not_found_exception(message=slot_label)
 
-    def deregister_player(self, slot_label: str, player: str):
-        slot = self.get_slot(slot_label=slot_label)
-        if slot is not None:
-            slot.deregister(proposed_name=player)
-            return
-        raise ErrorMaker.make_slot_not_found_exception(message=slot_label)
+    # def deregister_player(self, slot_label: str, player: str):
+    #     slot = self.get_slot(slot_label=slot_label)
+    #     if slot is not None:
+    #         slot.deregister(proposed_name=player)
+    #         return
+    #     raise ErrorMaker.make_slot_not_found_exception(message=slot_label)
 
     def move_all_playable_players(self):
         for date_venue in self._bookings_by_date_venue:

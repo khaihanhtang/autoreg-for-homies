@@ -22,9 +22,17 @@ class SlotManager:
     def players(self) -> list[str]:
         return self._players
 
+    @players.setter
+    def players(self, new_players: list[str]):
+        self._players = new_players
+
     @property
     def reservations(self) -> list[Reservation]:
         return self._reservations
+
+    @reservations.setter
+    def reservations(self, new_reservations: list[Reservation]):
+        self._reservations = new_reservations
 
     def pop_first_playable_player(self) -> Reservation:
         for i, reservation in enumerate(self._reservations):
