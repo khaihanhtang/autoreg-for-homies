@@ -193,19 +193,31 @@ class TelegramCommandHandler:
                     chat_id=query.message.chat.id,
                     text=f"/{TelegramCommandHandler.COMMAND_RG} {full_name} {slot_label}"
                 )
-                await TelegramCommandHandler.run_reg(update=Update(update_id=res.id, message=res), context=context)
+                await TelegramCommandHandler.run_reg(
+                    update=Update(update_id=res.id, message=res),
+                    context=context,
+                    effective_user=query.from_user.username
+                )
             else:
                 res = await context.bot.send_message(
                     chat_id=query.message.chat.id,
                     text=f"/{TelegramCommandHandler.COMMAND_DEREG} {full_name} {slot_label}"
                 )
-                await TelegramCommandHandler.run_dereg(update=Update(update_id=res.id, message=res), context=context)
+                await TelegramCommandHandler.run_dereg(
+                    update=Update(update_id=res.id, message=res),
+                    context=context,
+                    effective_user=query.from_user.username
+                )
         else:
             res = await context.bot.send_message(
                 chat_id=query.message.chat.id,
                 text=f"/{TelegramCommandHandler.COMMAND_RG} {full_name} {slot_label}"
             )
-            await TelegramCommandHandler.run_reg(update=Update(update_id=res.id, message=res), context=context)
+            await TelegramCommandHandler.run_reg(
+                update=Update(update_id=res.id, message=res),
+                context=context,
+                effective_user=query.from_user.username
+            )
 
     @staticmethod
     async def write_data_and_update_bot_message_for_full_list(
@@ -312,11 +324,14 @@ class TelegramCommandHandler:
         )
 
     @staticmethod
-    async def run_reg(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def run_reg(update: Update, context: ContextTypes.DEFAULT_TYPE, effective_user: str or None = None):
         TelegramCommandHandler.log_message_from_user(update=update)
+
+        if effective_user is None:
+            effective_user = update.effective_user.username
 
         message = TelegramCommandHandler.auto_reg_system.handle_reg(
-            username=update.effective_user.username,
+            username=effective_user,
             message=update.message.text,
             chat_id=update.message.chat_id
         )
@@ -327,11 +342,14 @@ class TelegramCommandHandler:
         )
 
     @staticmethod
-    async def run_reserve(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def run_reserve(update: Update, context: ContextTypes.DEFAULT_TYPE, effective_user: str or None = None):
         TelegramCommandHandler.log_message_from_user(update=update)
+
+        if effective_user is None:
+            effective_user = update.effective_user.username
 
         message = TelegramCommandHandler.auto_reg_system.handle_reserve(
-            username=update.effective_user.username,
+            username=effective_user,
             message=update.message.text,
             chat_id=update.message.chat_id
         )
@@ -342,11 +360,14 @@ class TelegramCommandHandler:
         )
 
     @staticmethod
-    async def run_dereg(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def run_dereg(update: Update, context: ContextTypes.DEFAULT_TYPE, effective_user: str or None = None):
         TelegramCommandHandler.log_message_from_user(update=update)
 
+        if effective_user is None:
+            effective_user = update.effective_user.username
+
         message = TelegramCommandHandler.auto_reg_system.handle_deregister(
-            username=update.effective_user.username,
+            username=effective_user,
             message=update.message.text,
             chat_id=update.message.chat_id
         )
