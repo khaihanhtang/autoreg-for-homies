@@ -10,6 +10,11 @@ class AdminManager:
     def admin_list(self) -> set[str]:
         return self._admin_list
 
+    def is_admin(self, username: str) -> bool:
+        if username in self._admin_list:
+            return True
+        return False
+
     def enforce_admin(self, username: str):
-        if username not in self._admin_list:
+        if not self.is_admin(username=username):
             raise ErrorMaker.make_admin_permission_error_exception()
