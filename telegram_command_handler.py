@@ -43,6 +43,7 @@ class TelegramCommandHandler:
     CALLBACK_DATA_HELP = f"_{COMMAND_HELP}"
     CALLBACK_DATA_ALL = f"_{COMMAND_ALL}"
     CALLBACK_DATA_DRG = f"_{COMMAND_DRG}"
+    CALLBACK_DATA_AV = f"_{COMMAND_AV}"
 
     SECOND_CLICK_TO_DEREGISTER = False
 
@@ -92,6 +93,10 @@ class TelegramCommandHandler:
                 text=TelegramCommandHandler.COMMAND_HELP,
                 callback_data=TelegramCommandHandler.CALLBACK_DATA_HELP
             ),
+            InlineKeyboardButton(
+                text=TelegramCommandHandler.COMMAND_AV,
+                callback_data=TelegramCommandHandler.CALLBACK_DATA_AV
+            ),
         ])
         return InlineKeyboardMarkup(inline_keyboard=button_list)
 
@@ -139,6 +144,13 @@ class TelegramCommandHandler:
                 text=f"/{TelegramCommandHandler.COMMAND_HELP}\t{identity_message}"
             )
             await TelegramCommandHandler.run_help(update=Update(update_id=res.id, message=res), _=None)
+            return
+        elif query.data == TelegramCommandHandler.CALLBACK_DATA_AV:
+            res = await context.bot.send_message(
+                chat_id=query.message.chat.id,
+                text=f"/{TelegramCommandHandler.COMMAND_AV}\t{identity_message}"
+            )
+            await TelegramCommandHandler.run_av(update=Update(update_id=res.id, message=res), context=context)
             return
         elif query.data == TelegramCommandHandler.CALLBACK_DATA_DRG:
             slot_labels_involving_user = (TelegramCommandHandler
