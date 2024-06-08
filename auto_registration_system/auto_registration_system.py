@@ -73,9 +73,9 @@ class AutoRegistrationSystem:
             return "Không còn slot trống!"
         return res
 
-    def handle_reg(self, message: str, chat_id: int) -> str:
+    def handle_reg(self, username: str, message: str, chat_id: int) -> str:
         try:
-            self._lock_manager.enforce_system_unlocked()
+            self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
@@ -83,9 +83,9 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e)
 
-    def handle_reserve(self, message: str, chat_id: int) -> str:
+    def handle_reserve(self, username: str, message: str, chat_id: int) -> str:
         try:
-            self._lock_manager.enforce_system_unlocked()
+            self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
@@ -93,9 +93,9 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e)
 
-    def handle_dereg(self, message: str, chat_id: int) -> str:
+    def handle_deregister(self, username: str, message: str, chat_id: int) -> str:
         try:
-            self._lock_manager.enforce_system_unlocked()
+            self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)

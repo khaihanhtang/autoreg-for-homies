@@ -316,7 +316,9 @@ class TelegramCommandHandler:
         TelegramCommandHandler.log_message_from_user(update=update)
 
         message = TelegramCommandHandler.auto_reg_system.handle_reg(
-            message=update.message.text, chat_id=update.message.chat_id
+            username=update.effective_user.username,
+            message=update.message.text,
+            chat_id=update.message.chat_id
         )
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
@@ -329,7 +331,9 @@ class TelegramCommandHandler:
         TelegramCommandHandler.log_message_from_user(update=update)
 
         message = TelegramCommandHandler.auto_reg_system.handle_reserve(
-            message=update.message.text, chat_id=update.message.chat_id
+            username=update.effective_user.username,
+            message=update.message.text,
+            chat_id=update.message.chat_id
         )
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
@@ -341,8 +345,10 @@ class TelegramCommandHandler:
     async def run_dereg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         TelegramCommandHandler.log_message_from_user(update=update)
 
-        message = TelegramCommandHandler.auto_reg_system.handle_dereg(
-            message=update.message.text, chat_id=update.message.chat_id
+        message = TelegramCommandHandler.auto_reg_system.handle_deregister(
+            username=update.effective_user.username,
+            message=update.message.text,
+            chat_id=update.message.chat_id
         )
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
