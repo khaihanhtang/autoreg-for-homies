@@ -1,8 +1,6 @@
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler
 from telegram.ext import filters
 
-from auto_registration_system.auto_registration_system import AutoRegistrationSystem
-from config import Config
 from telegram_command_handler import TelegramCommandHandler
 
 import logging

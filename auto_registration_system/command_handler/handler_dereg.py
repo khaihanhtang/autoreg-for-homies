@@ -11,7 +11,7 @@ class DeregHandler:
         try:
             slot_label = StringParser.get_last_word(message=message)
             current_message = StringParser.remove_last_word(message=message)
-        except:
+        except Exception:
             raise ErrorMaker.make_syntax_error_exception(message=message)
 
         players: list[str] = StringParser.split_names(current_message)
@@ -31,9 +31,10 @@ class DeregHandler:
                     elif index >= len(slot.players) or slot.players[index] == "":
                         response += f"Vị trí {index + 1} đã bị xóa hoặc không tồn tại!\n"
                     else:
-                        response += f"{slot.players[index]} (từ vị trí {index + 1}) vừa được xóa khỏi slot {slot_label}!\n"
+                        response += f"""{slot.players[index]} (từ vị trí {index + 1}) 
+                                    vừa được xóa khỏi slot {slot_label}!\n"""
                         slot.players[index] = ""
-                except Exception:
+                except ValueError:
                     found: bool = False
                     for i, player_name in enumerate(slot.players):
                         if name == player_name:

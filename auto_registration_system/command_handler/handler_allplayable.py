@@ -9,4 +9,4 @@ class AllplayableHandler:
                 for reservation in data.bookings_by_date_venue[date_venue][slot_label].reservations:
                     reservation.is_playable = True
         data.move_all_playable_players()
-        return f"Admin đã thay đổi các vị trí dự bị thành (playable)"
+        return "Admin đã thay đổi các vị trí dự bị thành (playable)"

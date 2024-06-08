@@ -1,5 +1,3 @@
-import logging
-
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.string_parser.string_parser import StringParser
 from ..exception.error_maker import ErrorMaker

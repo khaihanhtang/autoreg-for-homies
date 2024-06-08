@@ -9,7 +9,7 @@ class ReserveHandler:
         try:
             slot_label = StringParser.get_last_word(message=message)
             current_message = StringParser.remove_last_word(message=message)
-        except:
+        except Exception:
             raise ErrorMaker.make_syntax_error_exception(message=message)
 
         players: list[str] = StringParser.split_names(current_message)
