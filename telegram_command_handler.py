@@ -39,6 +39,8 @@ class TelegramCommandHandler:
     COMMAND_ADMIN = "admin"
     COMMAND_AV = "av"
     COMMAND_ALLPLAYABLE = "allplayable"
+    COMMAND_LOCK = "lock"
+    COMMAND_UNLOCK = "unlock"
     COMMAND_HELP = "help"
     CALLBACK_DATA_HELP = f"_{COMMAND_HELP}"
     CALLBACK_DATA_ALL = f"_{COMMAND_ALL}"
@@ -372,11 +374,28 @@ class TelegramCommandHandler:
             message=update.message.text,
             chat_id=update.message.chat_id
         )
+
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
             context=context,
             message=message
         )
+
+    @staticmethod
+    async def run_lock(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        TelegramCommandHandler.log_message_from_user(update=update)
+
+        message = TelegramCommandHandler.auto_reg_system.handle_lock(username=update.effective_user.username)
+
+        await TelegramCommandHandler.reply_message(update=update, text=message)
+
+    @staticmethod
+    async def run_unlock(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        TelegramCommandHandler.log_message_from_user(update=update)
+
+        message = TelegramCommandHandler.auto_reg_system.handle_unlock(username=update.effective_user.username)
+
+        await TelegramCommandHandler.reply_message(update=update, text=message)
 
     @staticmethod
     async def run_help(update: Update, _):

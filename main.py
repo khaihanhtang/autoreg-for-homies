@@ -60,6 +60,12 @@ app.add_handler(
     CommandHandler(command=TelegramCommandHandler.COMMAND_ALLPLAYABLE, callback=TelegramCommandHandler.run_allplayable)
 )
 app.add_handler(
+    CommandHandler(command=TelegramCommandHandler.COMMAND_LOCK, callback=TelegramCommandHandler.run_lock)
+)
+app.add_handler(
+    CommandHandler(command=TelegramCommandHandler.COMMAND_UNLOCK, callback=TelegramCommandHandler.run_unlock)
+)
+app.add_handler(
     CommandHandler(command=TelegramCommandHandler.COMMAND_HELP, callback=TelegramCommandHandler.run_help)
 )
 app.add_handler(

@@ -4,6 +4,7 @@ from auto_registration_system.command_handler.handler_av import AvHandler
 from auto_registration_system.command_handler.handler_dereg import DeregHandler
 from auto_registration_system.command_handler.handler_reg import RegHandler
 from auto_registration_system.command_handler.handler_reserve import ReserveHandler
+from auto_registration_system.data_structure.lock_manager import LockManager
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.data_structure.admin_manager import AdminManager
 from auto_registration_system.command_handler.handler_new import NewHandler
@@ -15,8 +16,9 @@ class AutoRegistrationSystem:
 
     def __init__(self, admin_list: set[str], chat_id: int):
         self._data: RegistrationData or None = None
-        self._admin_manager = AdminManager(admin_list=admin_list)
-        self._chat_manager = ChatManager(chat_id=chat_id)
+        self._admin_manager: AdminManager = AdminManager(admin_list=admin_list)
+        self._chat_manager: ChatManager = ChatManager(chat_id=chat_id)
+        self._lock_manager: LockManager = LockManager(locked=False)
 
     @property
     def data(self):
@@ -73,6 +75,7 @@ class AutoRegistrationSystem:
 
     def handle_reg(self, message: str, chat_id: int) -> str:
         try:
+            self._lock_manager.enforce_system_unlocked()
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
@@ -82,6 +85,7 @@ class AutoRegistrationSystem:
 
     def handle_reserve(self, message: str, chat_id: int) -> str:
         try:
+            self._lock_manager.enforce_system_unlocked()
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
@@ -91,6 +95,7 @@ class AutoRegistrationSystem:
 
     def handle_dereg(self, message: str, chat_id: int) -> str:
         try:
+            self._lock_manager.enforce_system_unlocked()
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
             message = StringParser.remove_command(message=message)
@@ -110,5 +115,21 @@ class AutoRegistrationSystem:
 
         try:
             return AllplayableHandler.handle(message=message, data=self._data)
+        except Exception as e:
+            return repr(e)
+
+    def handle_lock(self, username: str) -> str:
+        try:
+            self._admin_manager.enforce_admin(username=username)
+            self._lock_manager.locked = True
+            return "Hệ thống đã bị khóa!"
+        except Exception as e:
+            return repr(e)
+
+    def handle_unlock(self, username: str) -> str:
+        try:
+            self._admin_manager.enforce_admin(username=username)
+            self._lock_manager.locked = False
+            return "Hệ thống đã được mở khóa!"
         except Exception as e:
             return repr(e)

@@ -14,15 +14,15 @@ class ErrorMaker:
 
     @staticmethod
     def make_dv_conflict_exception(message: str) -> Exception:
-        return Exception(f"Xung đột ngày và địa điểm '{message}'!")
+        return Exception(f"Ngày và địa điểm '{message}' bị trùng!")
 
     @staticmethod
     def make_slot_conflict_exception(message: str) -> Exception:
-        return Exception(f"Xung đột slot '{message}'!")
+        return Exception(f"Slot '{message}' bị trùng!")
 
     @staticmethod
     def make_name_conflict_exception(message: str) -> Exception:
-        return Exception(f"Xung đột tên '{message}'!")
+        return Exception(f"'{message}' đã được đăng kí trước đó!")
 
     @staticmethod
     def make_name_not_found_exception(message: str) -> Exception:
@@ -31,6 +31,10 @@ class ErrorMaker:
     @staticmethod
     def make_admin_permission_error_exception() -> Exception:
         return Exception(f"Lệnh này cần quyền admin!")
+
+    @staticmethod
+    def make_system_locked_exception() -> Exception:
+        return Exception(f"Hệ thống đã bị khóa!")
 
     @staticmethod
     def make_chat_id_enforcement() -> Exception:
