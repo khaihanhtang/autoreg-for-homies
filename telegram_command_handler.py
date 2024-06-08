@@ -90,12 +90,12 @@ class TelegramCommandHandler:
                 callback_data=TelegramCommandHandler.CALLBACK_DATA_ALL
             ),
             InlineKeyboardButton(
-                text=TelegramCommandHandler.COMMAND_HELP,
-                callback_data=TelegramCommandHandler.CALLBACK_DATA_HELP
-            ),
-            InlineKeyboardButton(
                 text=TelegramCommandHandler.COMMAND_AV,
                 callback_data=TelegramCommandHandler.CALLBACK_DATA_AV
+            ),
+            InlineKeyboardButton(
+                text=TelegramCommandHandler.COMMAND_HELP,
+                callback_data=TelegramCommandHandler.CALLBACK_DATA_HELP
             ),
         ])
         return InlineKeyboardMarkup(inline_keyboard=button_list)
@@ -273,7 +273,9 @@ class TelegramCommandHandler:
         sent_message_info = await TelegramCommandHandler.reply_message(
             update=update,
             text="Danh sách các slot còn thiếu người:\n\n" +
-                 TelegramCommandHandler.auto_reg_system.get_available_slots_as_string()
+                 TelegramCommandHandler.auto_reg_system.get_available_slots_as_string(),
+            reply_markup=TelegramCommandHandler.make_inline_buttons_for_registration(
+                data=TelegramCommandHandler.auto_reg_system.data)
         )
         new_av_chat_id = sent_message_info.chat_id
         new_av_message_id = sent_message_info.message_id
