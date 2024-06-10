@@ -1,6 +1,7 @@
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler
 from telegram.ext import filters
 
+from config import Config
 from telegram_command_handler import TelegramCommandHandler
 
 import logging
@@ -8,7 +9,7 @@ import logging
 token: str = input("Enter bot token: ")
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='activities.log', encoding='utf-8', level=logging.INFO)
+logging.basicConfig(filename=Config.log_file_name, encoding='utf-8', level=logging.INFO)
 
 app = (
     ApplicationBuilder()
@@ -65,6 +66,9 @@ app.add_handler(
 )
 app.add_handler(
     CommandHandler(command=TelegramCommandHandler.COMMAND_HELP, callback=TelegramCommandHandler.run_help)
+)
+app.add_handler(
+    CommandHandler(command=TelegramCommandHandler.COMMAND_HISTORY, callback=TelegramCommandHandler.run_history)
 )
 app.add_handler(
     MessageHandler(filters=filters.COMMAND, callback=TelegramCommandHandler.run_command_not_found)
