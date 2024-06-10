@@ -4,6 +4,7 @@ from telegram.ext import ContextTypes
 
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
 from auto_registration_system.data_structure.registration_data import RegistrationData
+from tracer import Tracer
 from auto_registration_system.string_parser.string_parser import StringParser
 
 import logging
@@ -15,8 +16,11 @@ from config import Config
 class TelegramCommandHandler:
 
     auto_reg_system: AutoRegistrationSystem = AutoRegistrationSystem(
-        admin_list=Config.admin_list, chat_id=Config.chat_id
+        admins=Config.admins,
+        chat_ids=Config.chat_ids
     )
+
+    tracer: Tracer = Tracer(log_file_name=Config.log_file_name, history_file_name=Config.history_file_name)
 
     NUM_BUTTONS_PER_LINE = 3
 
@@ -398,7 +402,6 @@ class TelegramCommandHandler:
 
         message = TelegramCommandHandler.auto_reg_system.handle_allplayable(
             username=update.effective_user.username,
-            message=update.message.text,
             chat_id=update.message.chat_id
         )
 
@@ -409,7 +412,7 @@ class TelegramCommandHandler:
         )
 
     @staticmethod
-    async def run_lock(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def run_lock(update: Update, _):
         TelegramCommandHandler.log_message_from_user(update=update)
 
         message = TelegramCommandHandler.auto_reg_system.handle_lock(username=update.effective_user.username)
@@ -417,7 +420,7 @@ class TelegramCommandHandler:
         await TelegramCommandHandler.reply_message(update=update, text=message)
 
     @staticmethod
-    async def run_unlock(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def run_unlock(update: Update, _):
         TelegramCommandHandler.log_message_from_user(update=update)
 
         message = TelegramCommandHandler.auto_reg_system.handle_unlock(username=update.effective_user.username)

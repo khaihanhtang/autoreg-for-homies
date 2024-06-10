@@ -3,15 +3,15 @@ from ..exception.error_maker import ErrorMaker
 
 class AdminManager:
 
-    def __init__(self, admin_list: set[str]):
-        self._admin_list = admin_list
+    def __init__(self, admins: set[str]):
+        self._admins = admins
 
     @property
-    def admin_list(self) -> set[str]:
-        return self._admin_list
+    def admins(self) -> set[str]:
+        return self._admins
 
     def is_admin(self, username: str) -> bool:
-        if username in self._admin_list:
+        if username in self._admins:
             return True
         return False
 

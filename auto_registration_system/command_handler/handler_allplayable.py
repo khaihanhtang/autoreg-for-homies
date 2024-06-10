@@ -3,7 +3,7 @@ from auto_registration_system.data_structure.registration_data import Registrati
 
 class AllplayableHandler:
     @staticmethod
-    def handle(message: str, data: RegistrationData) -> str:
+    def handle(data: RegistrationData) -> str:
         for date_venue in data.bookings_by_date_venue:
             for slot_label in data.bookings_by_date_venue[date_venue]:
                 for reservation in data.bookings_by_date_venue[date_venue][slot_label].reservations:
