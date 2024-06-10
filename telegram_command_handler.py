@@ -254,7 +254,7 @@ class TelegramCommandHandler:
                     message_id=TelegramCommandHandler.last_message_id,
                     chat_id=TelegramCommandHandler.last_chat_id
                 )
-            finally:
+            except Exception:
                 pass
         TelegramCommandHandler.last_chat_id = new_chat_id
         TelegramCommandHandler.last_message_id = new_message_id
@@ -301,7 +301,7 @@ class TelegramCommandHandler:
                     message_id=TelegramCommandHandler.last_av_message_id,
                     chat_id=TelegramCommandHandler.last_av_chat_id
                 )
-            finally:
+            except Exception:
                 pass
 
         # record id of current message
