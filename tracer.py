@@ -11,7 +11,7 @@ class Tracer:
         self._time_manager = time_manager
 
     def log(self, message: str):
-        message_to_log = f"{self._time_manager.now_to_str():} {message}\n"
-        logging.info(msg=message_to_log)
+        logging.info(msg=f"{message}")
         with open(file=self._history_file_name, mode="a", encoding="utf-8") as f:
-            f.write(message_to_log)
+            f.write(f"## {self._time_manager.now_to_str()}\n")
+            f.write(f"{message}\n\n")

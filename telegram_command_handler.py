@@ -274,8 +274,8 @@ class TelegramCommandHandler:
     @staticmethod
     def log_message_from_user(update: Update):
         TelegramCommandHandler.tracer.log(
-            message=f"""(from user {TelegramCommandHandler.get_full_name_from_update(update=update)})
-                    {update.message.text}"""
+            message=f"(from user {TelegramCommandHandler.get_full_name_from_update(update=update)})"
+                    + f" {update.message.text}"
         )
 
     @staticmethod
