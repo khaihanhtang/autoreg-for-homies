@@ -4,9 +4,10 @@ from telegram.ext import ContextTypes
 
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
 from auto_registration_system.data_structure.registration_data import RegistrationData
+from time_manager import TimeManager
+from tracer import Tracer
 from auto_registration_system.string_parser.string_parser import StringParser
 
-import logging
 import time
 
 from config import Config
@@ -15,7 +16,14 @@ from config import Config
 class TelegramCommandHandler:
 
     auto_reg_system: AutoRegistrationSystem = AutoRegistrationSystem(
-        admin_list=Config.admin_list, chat_id=Config.chat_id
+        admins=Config.admins,
+        chat_ids=Config.chat_ids
+    )
+
+    tracer: Tracer = Tracer(
+        log_file_name=Config.log_file_name,
+        history_file_name=Config.history_file_name,
+        time_manager=TimeManager(time_zone=Config.time_zone, time_format=Config.time_format)
     )
 
     NUM_BUTTONS_PER_LINE = 3
@@ -42,6 +50,7 @@ class TelegramCommandHandler:
     COMMAND_LOCK = "lock"
     COMMAND_UNLOCK = "unlock"
     COMMAND_HELP = "help"
+    COMMAND_HISTORY = "history"
     CALLBACK_DATA_HELP = f"_{COMMAND_HELP}"
     CALLBACK_DATA_ALL = f"_{COMMAND_ALL}"
     CALLBACK_DATA_DRG = f"_{COMMAND_DRG}"
@@ -58,7 +67,9 @@ class TelegramCommandHandler:
         try:
             return await update.message.reply_text(text=text, reply_markup=reply_markup)
         except Exception as e:
-            logging.info(msg=f"We caught an error when replying message: {repr(e)}")
+            TelegramCommandHandler.tracer.log(
+                message=f"(from system) We caught an error when replying message: {repr(e)}"
+            )
             time.sleep(10)
             await TelegramCommandHandler.reply_message(update=update, text="Vừa có lỗi kết nối! Đang thử lại!")
             return await TelegramCommandHandler.reply_message(update=update, text=text, reply_markup=reply_markup)
@@ -240,6 +251,7 @@ class TelegramCommandHandler:
             )
             new_chat_id = sent_message_info.chat_id
             new_message_id = sent_message_info.message_id
+            TelegramCommandHandler.tracer.log(message=f"(from system)\n{all_slots_as_string}")
         else:
             await TelegramCommandHandler.reply_message(update=update, text="Danh sách chơi trống!")
 
@@ -261,8 +273,9 @@ class TelegramCommandHandler:
 
     @staticmethod
     def log_message_from_user(update: Update):
-        logging.info(
-            msg=f"{update.message.text} (from user {TelegramCommandHandler.get_full_name_from_update(update=update)})"
+        TelegramCommandHandler.tracer.log(
+            message=f"(from user {TelegramCommandHandler.get_full_name_from_update(update=update)})"
+                    + f" {update.message.text}"
         )
 
     @staticmethod
@@ -398,7 +411,6 @@ class TelegramCommandHandler:
 
         message = TelegramCommandHandler.auto_reg_system.handle_allplayable(
             username=update.effective_user.username,
-            message=update.message.text,
             chat_id=update.message.chat_id
         )
 
@@ -409,7 +421,7 @@ class TelegramCommandHandler:
         )
 
     @staticmethod
-    async def run_lock(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def run_lock(update: Update, _):
         TelegramCommandHandler.log_message_from_user(update=update)
 
         message = TelegramCommandHandler.auto_reg_system.handle_lock(username=update.effective_user.username)
@@ -417,12 +429,28 @@ class TelegramCommandHandler:
         await TelegramCommandHandler.reply_message(update=update, text=message)
 
     @staticmethod
-    async def run_unlock(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def run_unlock(update: Update, _):
         TelegramCommandHandler.log_message_from_user(update=update)
 
         message = TelegramCommandHandler.auto_reg_system.handle_unlock(username=update.effective_user.username)
 
         await TelegramCommandHandler.reply_message(update=update, text=message)
+
+    @staticmethod
+    async def run_history(update: Update, _):
+        TelegramCommandHandler.log_message_from_user(update=update)
+
+        try:
+            file = TelegramCommandHandler.auto_reg_system.handle_history(
+                username=update.effective_user.username,
+                history_file_name=Config.history_file_name
+            )
+            await update.message.reply_document(document=file)
+        except Exception:
+            await TelegramCommandHandler.reply_message(
+                update=update,
+                text="Unable to send file! Maybe you are not admin or connection is error!"
+            )
 
     @staticmethod
     async def run_help(update: Update, _):

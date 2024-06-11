@@ -1,3 +1,5 @@
+from typing import BinaryIO
+
 from auto_registration_system.data_structure.chat_manager import ChatManager
 from auto_registration_system.command_handler.handler_allplayable import AllplayableHandler
 from auto_registration_system.command_handler.handler_av import AvHandler
@@ -14,10 +16,10 @@ from auto_registration_system.string_parser.string_parser import StringParser
 
 class AutoRegistrationSystem:
 
-    def __init__(self, admin_list: set[str], chat_id: int):
+    def __init__(self, admins: set[str], chat_ids: set[int]):
         self._data: RegistrationData or None = None
-        self._admin_manager: AdminManager = AdminManager(admin_list=admin_list)
-        self._chat_manager: ChatManager = ChatManager(chat_id=chat_id)
+        self._admin_manager: AdminManager = AdminManager(admins=admins)
+        self._chat_manager: ChatManager = ChatManager(chat_ids=chat_ids)
         self._lock_manager: LockManager = LockManager(locked=False)
 
     @property
@@ -104,9 +106,9 @@ class AutoRegistrationSystem:
             return repr(e)
 
     def get_admin_list_as_string(self) -> str:
-        return str(self._admin_manager.admin_list)
+        return str(self._admin_manager.admins)
 
-    def handle_allplayable(self, username: str, message: str, chat_id: int) -> str:
+    def handle_allplayable(self, username: str, chat_id: int) -> str:
         try:
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
             self._admin_manager.enforce_admin(username=username)
@@ -114,7 +116,7 @@ class AutoRegistrationSystem:
             return repr(e)
 
         try:
-            return AllplayableHandler.handle(message=message, data=self._data)
+            return AllplayableHandler.handle(data=self._data)
         except Exception as e:
             return repr(e)
 
@@ -133,3 +135,7 @@ class AutoRegistrationSystem:
             return "Hệ thống đã được mở khóa!"
         except Exception as e:
             return repr(e)
+
+    def handle_history(self, username: str, history_file_name: str) -> BinaryIO:
+        self._admin_manager.enforce_admin(username=username)
+        return open(history_file_name, 'rb')
