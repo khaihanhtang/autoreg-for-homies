@@ -449,7 +449,7 @@ class TelegramCommandHandler:
         except Exception:
             await TelegramCommandHandler.reply_message(
                 update=update,
-                text="Unable to send file! Maybe you are not admin or connection is error!"
+                text="Không thể gửi file! Cần quyền admin hoặc kết nối gặp vấn đề!"
             )
 
     @staticmethod
