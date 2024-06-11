@@ -23,7 +23,7 @@ class AutoRegistrationSystem:
         self._lock_manager: LockManager = LockManager(locked=False)
 
     @property
-    def data(self):
+    def data(self) -> RegistrationData:
         return self._data
 
     @staticmethod

@@ -59,10 +59,10 @@ class RegistrationData:
             for slot_label in self._bookings_by_date_venue[date_venue]:
                 self._bookings_by_date_venue[date_venue][slot_label].move_all_playable_players()
 
-    def collect_slot_labels_involving_user(self, full_name: str) -> list[str]:
+    def collect_slot_labels_involving_user(self, id_string: str) -> list[str]:
         res: list[str] = list()
         for date_venue in self._bookings_by_date_venue:
             for slot_label, slot in self._bookings_by_date_venue[date_venue].items():
-                if slot.is_in_any_list(proposed_name=full_name):
+                if slot.is_in_any_list(proposed_name=id_string):
                     res.append(slot_label)
         return res
