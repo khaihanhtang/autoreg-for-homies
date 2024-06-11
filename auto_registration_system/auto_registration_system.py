@@ -1,3 +1,5 @@
+from typing import BinaryIO
+
 from auto_registration_system.data_structure.chat_manager import ChatManager
 from auto_registration_system.command_handler.handler_allplayable import AllplayableHandler
 from auto_registration_system.command_handler.handler_av import AvHandler
@@ -133,3 +135,7 @@ class AutoRegistrationSystem:
             return "Hệ thống đã được mở khóa!"
         except Exception as e:
             return repr(e)
+
+    def handle_history(self, username: str, history_file_name: str) -> BinaryIO:
+        self._admin_manager.enforce_admin(username=username)
+        return open(history_file_name, 'rb')

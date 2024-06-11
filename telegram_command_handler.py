@@ -441,10 +441,16 @@ class TelegramCommandHandler:
         TelegramCommandHandler.log_message_from_user(update=update)
 
         try:
-            history_file = open(Config.history_file_name, 'rb')
-            await update.message.reply_document(document=history_file)
+            file = TelegramCommandHandler.auto_reg_system.handle_history(
+                username=update.effective_user.username,
+                history_file_name=Config.history_file_name
+            )
+            await update.message.reply_document(document=file)
         except Exception:
-            await TelegramCommandHandler.reply_message(update=update, text="Unable to send file!")
+            await TelegramCommandHandler.reply_message(
+                update=update,
+                text="Unable to send file! Maybe you are not admin or connection is error!"
+            )
 
     @staticmethod
     async def run_help(update: Update, _):
