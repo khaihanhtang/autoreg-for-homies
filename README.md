@@ -4,7 +4,7 @@ This is the source code for auto-registering badminton slots, dedicated to badmi
 This source code [autoreg-for-homies](https://github.com/khaihanhtang/autoreg-for-homies) is licensed under [Apache License 2.0](https://github.com/khaihanhtang/autoreg-for-homies/blob/main/LICENSE).
 
 ## Statement of Data Collection
-This source code [autoreg-for-homies](https://github.com/khaihanhtang/autoreg-for-homies) is open-sourced, non-profit, and auditable/verifiable by any public party. We use the library [python-telegram-bot](https://python-telegram-bot.org/), whose source code is in [link](https://github.com/python-telegram-bot/python-telegram-bot), as a subroutine to send and receive messages from users. The following types of data are those that the bot collects:
+This source code [autoreg-for-homies](https://github.com/khaihanhtang/autoreg-for-homies) is open-sourced, non-profit, and auditable/verifiable by any public party. We use the library [python-telegram-bot](https://python-telegram-bot.org/), whose source code is in [this link](https://github.com/python-telegram-bot/python-telegram-bot), as a subroutine to send and receive messages from users. The following types of data are those that the bot collects:
 1. Public information of users in the chat where the bot is among the participants. Public information includes Telegram ID, full name (first name and surname), and username.
 2. The messages users send to control the bots, namely, those starting with "/".
 3. Those collected by the above-mentioned library [python-telegram-bot](https://python-telegram-bot.org/) which are out of our control.
