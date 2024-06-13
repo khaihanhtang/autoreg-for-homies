@@ -1,11 +1,12 @@
+import traceback
+
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, \
     ReplyKeyboardRemove, ForceReply, User
-from telegram.constants import MessageEntityType
+from telegram.constants import MessageEntityType, ParseMode
 from telegram.ext import ContextTypes
 
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
 from auto_registration_system.data_structure.registration_data import RegistrationData
-from telegram_adapter.identity_manager import IdentityManager
 from time_manager import TimeManager
 from tracer import Tracer
 from string_parser.string_parser import StringParser
@@ -19,7 +20,8 @@ class TelegramCommandHandler:
 
     auto_reg_system: AutoRegistrationSystem = AutoRegistrationSystem(
         admins=Config.admins,
-        chat_ids=Config.chat_ids
+        chat_ids=Config.chat_ids,
+        alias_file_name=Config.alias_file_name
     )
 
     tracer: Tracer = Tracer(
@@ -27,8 +29,6 @@ class TelegramCommandHandler:
         history_file_name=Config.history_file_name,
         time_manager=TimeManager(time_zone=Config.time_zone, time_format=Config.time_format)
     )
-
-    identity_manager: IdentityManager = IdentityManager(alias_file_name=Config.alias_file_name)
 
     NUM_BUTTONS_PER_LINE = 3
 
@@ -55,6 +55,7 @@ class TelegramCommandHandler:
     COMMAND_UNLOCK = "unlock"
     COMMAND_HELP = "help"
     COMMAND_HISTORY = "history"
+    COMMAND_AKA = "aka"
     CALLBACK_DATA_HELP = f"_{COMMAND_HELP}"
     CALLBACK_DATA_ALL = f"_{COMMAND_ALL}"
     CALLBACK_DATA_DRG = f"_{COMMAND_DRG}"
@@ -66,6 +67,7 @@ class TelegramCommandHandler:
     async def reply_message(
             update: Update,
             text: str,
+            parse_mode: ParseMode or None = None,
             reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply | None = None,
     ):
         try:
@@ -76,7 +78,12 @@ class TelegramCommandHandler:
             )
             time.sleep(10)
             await TelegramCommandHandler.reply_message(update=update, text="Vừa có lỗi kết nối! Đang thử lại!")
-            return await TelegramCommandHandler.reply_message(update=update, text=text, reply_markup=reply_markup)
+            return await TelegramCommandHandler.reply_message(
+                update=update,
+                text=text,
+                parse_mode=parse_mode,
+                reply_markup=reply_markup
+            )
 
     @staticmethod
     def make_inline_buttons_for_registration(data: RegistrationData) -> InlineKeyboardMarkup:
@@ -118,19 +125,10 @@ class TelegramCommandHandler:
         return InlineKeyboardMarkup(inline_keyboard=button_list)
 
     @staticmethod
-    def _process_telegram_full_name(telegram_full_name: str) -> str:
-        char_list = list(telegram_full_name)
-        for i, c in enumerate(char_list):
-            if c == ",":
-                char_list[i] = ""
-        full_name = StringParser.split_names(message="".join(char_list))[0]
-        return full_name
-
-    @staticmethod
     def get_id_string_from_telegram_user(user: User):
-        return TelegramCommandHandler.identity_manager.get_alias_or_full_name(
+        return TelegramCommandHandler.auto_reg_system.identity_manager.get_alias_or_full_name(
             telegram_id=user.id,
-            full_name=TelegramCommandHandler._process_telegram_full_name(telegram_full_name=user.full_name)
+            full_name=StringParser.process_telegram_full_name(telegram_full_name=user.full_name)
         )
 
     # @staticmethod
@@ -472,6 +470,34 @@ class TelegramCommandHandler:
             await TelegramCommandHandler.reply_message(
                 update=update,
                 text="Không thể gửi file! Cần quyền admin hoặc kết nối gặp vấn đề!"
+            )
+
+    @staticmethod
+    async def run_aka(update: Update, _):
+        TelegramCommandHandler.log_message_from_user(update=update)
+
+        try:
+            affected_id, affected_name, affected_alias = TelegramCommandHandler.auto_reg_system.handle_aka(
+                sender_id=update.effective_user.id,
+                sender_username=update.effective_user.username,
+                sender_full_name=StringParser.process_telegram_full_name(
+                    telegram_full_name=update.effective_user.full_name
+                ),
+                message=update.message.text,
+                command_string=TelegramCommandHandler.COMMAND_AKA,
+                message_entities=update.message.parse_entities(
+                    types=[MessageEntityType.MENTION, MessageEntityType.TEXT_MENTION]
+                )
+            )
+            await TelegramCommandHandler.reply_message(
+                update=update,
+                text=f"[{affected_name}](tg://user?id={affected_id}) có alias mới là {affected_alias}!",
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
+        except Exception as e:
+            await TelegramCommandHandler.reply_message(
+                update=update,
+                text=print(traceback.format_exc())
             )
 
     @staticmethod

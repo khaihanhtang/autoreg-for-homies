@@ -71,6 +71,9 @@ app.add_handler(
     CommandHandler(command=TelegramCommandHandler.COMMAND_HISTORY, callback=TelegramCommandHandler.run_history)
 )
 app.add_handler(
+    CommandHandler(command=TelegramCommandHandler.COMMAND_AKA, callback=TelegramCommandHandler.run_aka)
+)
+app.add_handler(
     MessageHandler(filters=filters.COMMAND, callback=TelegramCommandHandler.run_command_not_found)
 )
 app.add_handler(CallbackQueryHandler(TelegramCommandHandler.handle_buttons))

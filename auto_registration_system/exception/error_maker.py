@@ -51,3 +51,7 @@ class ErrorMaker:
     @staticmethod
     def make_message_not_containing_alpha_exception(message: str) -> Exception:
         return Exception(f"'{message}' phải tồn tại ít nhất một chữ cái!")
+
+    @staticmethod
+    def make_message_containing_comma_exception(message: str) -> Exception:
+        return Exception(f"'{message} không hợp lệ vì chứa dấu ','!")

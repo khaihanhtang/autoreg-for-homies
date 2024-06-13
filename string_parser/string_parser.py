@@ -82,3 +82,12 @@ class StringParser:
     def enforce_single_line_message(message: str):
         if '\n' in message:
             raise ErrorMaker.make_single_line_not_satisfied_exception()
+
+    @staticmethod
+    def process_telegram_full_name(telegram_full_name: str) -> str:
+        char_list = list(telegram_full_name)
+        for i, c in enumerate(char_list):
+            if c == ",":
+                char_list[i] = ""
+        full_name = StringParser.split_names(message="".join(char_list))[0]
+        return full_name
