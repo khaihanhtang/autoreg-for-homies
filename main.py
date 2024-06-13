@@ -2,7 +2,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Cal
 from telegram.ext import filters
 
 from config import Config
-from telegram_command_handler import TelegramCommandHandler
+from telegram_adapter.telegram_command_handler import TelegramCommandHandler
 
 import logging
 

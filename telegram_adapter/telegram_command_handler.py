@@ -5,10 +5,10 @@ from telegram.ext import ContextTypes
 
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
 from auto_registration_system.data_structure.registration_data import RegistrationData
-from identity_manager import IdentityManager
+from telegram_adapter.identity_manager import IdentityManager
 from time_manager import TimeManager
 from tracer import Tracer
-from auto_registration_system.string_parser.string_parser import StringParser
+from string_parser.string_parser import StringParser
 
 import time
 

@@ -11,7 +11,7 @@ from auto_registration_system.data_structure.registration_data import Registrati
 from auto_registration_system.data_structure.admin_manager import AdminManager
 from auto_registration_system.command_handler.handler_new import NewHandler
 from auto_registration_system.term import Term
-from auto_registration_system.string_parser.string_parser import StringParser
+from string_parser.string_parser import StringParser
 
 
 class AutoRegistrationSystem:
@@ -55,7 +55,6 @@ class AutoRegistrationSystem:
 
         temp_data = RegistrationData()
         try:
-            message = StringParser.remove_command(message=message)
             response = NewHandler.handle(message=message, data=temp_data)
             if response:
                 self._data = temp_data
@@ -80,7 +79,6 @@ class AutoRegistrationSystem:
             self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
-            message = StringParser.remove_command(message=message)
             return RegHandler.handle(message=message, data=self._data)
         except Exception as e:
             return repr(e)
@@ -90,7 +88,6 @@ class AutoRegistrationSystem:
             self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
-            message = StringParser.remove_command(message=message)
             return ReserveHandler.handle(message=message, data=self._data)
         except Exception as e:
             return repr(e)
@@ -100,7 +97,6 @@ class AutoRegistrationSystem:
             self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
-            message = StringParser.remove_command(message=message)
             return DeregHandler.handle(message=message, data=self._data)
         except Exception as e:
             return repr(e)

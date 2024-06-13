@@ -1,8 +1,8 @@
 import re
 
-from ..exception.error_maker import ErrorMaker
-from ..exception.exception_last_word_not_found import LastWordNotFoundException
-from ..exception.exception_first_word_not_found import FirstWordNotFoundException
+from auto_registration_system.exception.error_maker import ErrorMaker
+from auto_registration_system.exception.exception_last_word_not_found import LastWordNotFoundException
+from auto_registration_system.exception.exception_first_word_not_found import FirstWordNotFoundException
 
 
 class StringParser:
