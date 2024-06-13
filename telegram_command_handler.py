@@ -1,5 +1,6 @@
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, \
     ReplyKeyboardRemove, ForceReply, User
+from telegram.constants import MessageEntityType
 from telegram.ext import ContextTypes
 
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
@@ -459,6 +460,7 @@ class TelegramCommandHandler:
     @staticmethod
     async def run_history(update: Update, _):
         TelegramCommandHandler.log_message_from_user(update=update)
+        print(update.message.parse_entities(types=[MessageEntityType.MENTION, MessageEntityType.TEXT_MENTION]))
 
         try:
             file = TelegramCommandHandler.auto_reg_system.handle_history(

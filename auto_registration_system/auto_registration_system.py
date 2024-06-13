@@ -139,3 +139,6 @@ class AutoRegistrationSystem:
     def handle_history(self, username: str, history_file_name: str) -> BinaryIO:
         self._admin_manager.enforce_admin(username=username)
         return open(history_file_name, 'rb')
+
+    def handle_aka(self, username: str, message: str) -> str:
+        pass
