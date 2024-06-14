@@ -163,3 +163,5 @@ cython_debug/
 
 *.md
 !README.md
+
+*.json

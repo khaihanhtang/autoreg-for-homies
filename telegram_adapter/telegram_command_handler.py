@@ -71,7 +71,7 @@ class TelegramCommandHandler:
             reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply | None = None,
     ):
         try:
-            return await update.message.reply_text(text=text, reply_markup=reply_markup)
+            return await update.message.reply_text(text=text, parse_mode=parse_mode, reply_markup=reply_markup)
         except Exception as e:
             TelegramCommandHandler.tracer.log(
                 message=f"(from system) We caught an error when replying message: {repr(e)}"
@@ -81,7 +81,6 @@ class TelegramCommandHandler:
             return await TelegramCommandHandler.reply_message(
                 update=update,
                 text=text,
-                parse_mode=parse_mode,
                 reply_markup=reply_markup
             )
 
@@ -458,7 +457,6 @@ class TelegramCommandHandler:
     @staticmethod
     async def run_history(update: Update, _):
         TelegramCommandHandler.log_message_from_user(update=update)
-        print(update.message.parse_entities(types=[MessageEntityType.MENTION, MessageEntityType.TEXT_MENTION]))
 
         try:
             file = TelegramCommandHandler.auto_reg_system.handle_history(
@@ -477,9 +475,8 @@ class TelegramCommandHandler:
         TelegramCommandHandler.log_message_from_user(update=update)
 
         try:
-            affected_id, affected_name, affected_alias = TelegramCommandHandler.auto_reg_system.handle_aka(
+            response = TelegramCommandHandler.auto_reg_system.handle_aka(
                 sender_id=update.effective_user.id,
-                sender_username=update.effective_user.username,
                 sender_full_name=StringParser.process_telegram_full_name(
                     telegram_full_name=update.effective_user.full_name
                 ),
@@ -489,15 +486,11 @@ class TelegramCommandHandler:
                     types=[MessageEntityType.MENTION, MessageEntityType.TEXT_MENTION]
                 )
             )
-            await TelegramCommandHandler.reply_message(
-                update=update,
-                text=f"[{affected_name}](tg://user?id={affected_id}) có alias mới là {affected_alias}!",
-                parse_mode=ParseMode.MARKDOWN_V2
-            )
+            await TelegramCommandHandler.reply_message(update=update, text=response)
         except Exception as e:
             await TelegramCommandHandler.reply_message(
                 update=update,
-                text=print(traceback.format_exc())
+                text=repr(e)
             )
 
     @staticmethod

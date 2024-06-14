@@ -13,6 +13,7 @@ from auto_registration_system.data_structure.lock_manager import LockManager
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.data_structure.admin_manager import AdminManager
 from auto_registration_system.command_handler.handler_new import NewHandler
+from auto_registration_system.exception.error_maker import ErrorMaker
 from auto_registration_system.term import Term
 from string_parser.string_parser import StringParser
 from auto_registration_system.data_structure.identity_manager import IdentityManager
@@ -145,10 +146,11 @@ class AutoRegistrationSystem:
         self._admin_manager.enforce_admin(username=username)
         return open(history_file_name, 'rb')
 
-    def handle_aka(self, sender_id: int, sender_username: str, sender_full_name: str, message: str, command_string: str,
+    def handle_aka(self, sender_id: int, sender_full_name: str, message: str, command_string: str,
                    message_entities: dict[MessageEntity, str]) -> str:
         if len(message_entities) >= 1:
-            self._admin_manager.enforce_admin(username=sender_username)
+            # self._admin_manager.enforce_admin(username=sender_username)
+            raise ErrorMaker.make_syntax_error_exception(message=message)
         return AkaHandler.handle(
             sender_id=sender_id,
             sender_full_name=sender_full_name,
