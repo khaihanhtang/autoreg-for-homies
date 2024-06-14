@@ -2,7 +2,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Cal
 from telegram.ext import filters
 
 from config import Config
-from telegram_command_handler import TelegramCommandHandler
+from telegram_adapter.telegram_command_handler import TelegramCommandHandler
 
 import logging
 
@@ -69,6 +69,9 @@ app.add_handler(
 )
 app.add_handler(
     CommandHandler(command=TelegramCommandHandler.COMMAND_HISTORY, callback=TelegramCommandHandler.run_history)
+)
+app.add_handler(
+    CommandHandler(command=TelegramCommandHandler.COMMAND_AKA, callback=TelegramCommandHandler.run_aka)
 )
 app.add_handler(
     MessageHandler(filters=filters.COMMAND, callback=TelegramCommandHandler.run_command_not_found)

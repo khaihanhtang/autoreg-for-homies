@@ -1,16 +1,18 @@
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.exception.error_maker import ErrorMaker
-from auto_registration_system.string_parser.string_parser import StringParser
+from string_parser.string_parser import StringParser
 
 
 class ReserveHandler:
     @staticmethod
-    def handle(message: str, data: RegistrationData):
+    def handle(message: str, data: RegistrationData) -> str:
+        original_message = message
+        message = StringParser.remove_command(message=message)
         try:
             slot_label = StringParser.get_last_word(message=message)
             current_message = StringParser.remove_last_word(message=message)
         except Exception:
-            raise ErrorMaker.make_syntax_error_exception(message=message)
+            raise ErrorMaker.make_syntax_error_exception(message=original_message)
 
         players: list[str] = StringParser.split_names(current_message)
 
@@ -26,7 +28,7 @@ class ReserveHandler:
                 except Exception as e:
                     response += f"{repr(e)}\n"
         if count_processed == 0:
-            return "Không có gì thay đổi"
+            return "Không có gì thay đổi!"
 
         data.move_all_playable_players()
 

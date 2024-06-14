@@ -1,5 +1,8 @@
 from typing import BinaryIO
 
+from telegram import MessageEntity
+
+from auto_registration_system.command_handler.handle_aka import AkaHandler
 from auto_registration_system.data_structure.chat_manager import ChatManager
 from auto_registration_system.command_handler.handler_allplayable import AllplayableHandler
 from auto_registration_system.command_handler.handler_av import AvHandler
@@ -10,21 +13,28 @@ from auto_registration_system.data_structure.lock_manager import LockManager
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.data_structure.admin_manager import AdminManager
 from auto_registration_system.command_handler.handler_new import NewHandler
+from auto_registration_system.exception.error_maker import ErrorMaker
 from auto_registration_system.term import Term
-from auto_registration_system.string_parser.string_parser import StringParser
+from string_parser.string_parser import StringParser
+from auto_registration_system.data_structure.identity_manager import IdentityManager
 
 
 class AutoRegistrationSystem:
 
-    def __init__(self, admins: set[str], chat_ids: set[int]):
+    def __init__(self, admins: set[str], chat_ids: set[int], alias_file_name: str):
         self._data: RegistrationData or None = None
         self._admin_manager: AdminManager = AdminManager(admins=admins)
         self._chat_manager: ChatManager = ChatManager(chat_ids=chat_ids)
         self._lock_manager: LockManager = LockManager(locked=False)
+        self._identity_manager: IdentityManager = IdentityManager(alias_file_name=alias_file_name)
 
     @property
-    def data(self):
+    def data(self) -> RegistrationData:
         return self._data
+
+    @property
+    def identity_manager(self) -> IdentityManager:
+        return self._identity_manager
 
     @staticmethod
     def convert_registrations_to_string(data: RegistrationData) -> str or None:
@@ -55,7 +65,6 @@ class AutoRegistrationSystem:
 
         temp_data = RegistrationData()
         try:
-            message = StringParser.remove_command(message=message)
             response = NewHandler.handle(message=message, data=temp_data)
             if response:
                 self._data = temp_data
@@ -80,7 +89,6 @@ class AutoRegistrationSystem:
             self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
-            message = StringParser.remove_command(message=message)
             return RegHandler.handle(message=message, data=self._data)
         except Exception as e:
             return repr(e)
@@ -90,7 +98,6 @@ class AutoRegistrationSystem:
             self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
-            message = StringParser.remove_command(message=message)
             return ReserveHandler.handle(message=message, data=self._data)
         except Exception as e:
             return repr(e)
@@ -100,7 +107,6 @@ class AutoRegistrationSystem:
             self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
-            message = StringParser.remove_command(message=message)
             return DeregHandler.handle(message=message, data=self._data)
         except Exception as e:
             return repr(e)
@@ -139,3 +145,17 @@ class AutoRegistrationSystem:
     def handle_history(self, username: str, history_file_name: str) -> BinaryIO:
         self._admin_manager.enforce_admin(username=username)
         return open(history_file_name, 'rb')
+
+    def handle_aka(self, sender_id: int, sender_full_name: str, message: str, command_string: str,
+                   message_entities: dict[MessageEntity, str]) -> str:
+        if len(message_entities) >= 1:
+            # self._admin_manager.enforce_admin(username=sender_username)
+            raise ErrorMaker.make_syntax_error_exception(message=message)
+        return AkaHandler.handle(
+            sender_id=sender_id,
+            sender_full_name=sender_full_name,
+            message=message,
+            command_string=command_string,
+            message_entities=message_entities,
+            identity_manager=self._identity_manager
+        )

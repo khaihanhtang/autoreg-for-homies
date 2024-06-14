@@ -1,5 +1,5 @@
 from auto_registration_system.data_structure.registration_data import RegistrationData
-from auto_registration_system.string_parser.string_parser import StringParser
+from string_parser.string_parser import StringParser
 from ..exception.error_maker import ErrorMaker
 from ..term import Term
 
@@ -60,6 +60,7 @@ class NewHandler:
 
     @staticmethod
     def handle(message: str, data: RegistrationData) -> bool:
+        message = StringParser.remove_command(message=message)
         current_date_venue: str or None = None
         current_slot_label: str or None = None
         count_processed: int = 0

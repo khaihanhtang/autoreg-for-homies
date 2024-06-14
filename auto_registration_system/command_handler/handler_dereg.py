@@ -1,5 +1,5 @@
 from auto_registration_system.data_structure.registration_data import RegistrationData
-from auto_registration_system.string_parser.string_parser import StringParser
+from string_parser.string_parser import StringParser
 from ..data_structure.reservation import Reservation
 from ..data_structure.slot_manager import SlotManager
 from ..exception.error_maker import ErrorMaker
@@ -7,12 +7,14 @@ from ..exception.error_maker import ErrorMaker
 
 class DeregHandler:
     @staticmethod
-    def handle(message: str, data: RegistrationData):
+    def handle(message: str, data: RegistrationData) -> str:
+        original_message = message
+        message = StringParser.remove_command(message=message)
         try:
             slot_label = StringParser.get_last_word(message=message)
             current_message = StringParser.remove_last_word(message=message)
         except Exception:
-            raise ErrorMaker.make_syntax_error_exception(message=message)
+            raise ErrorMaker.make_syntax_error_exception(message=original_message)
 
         players: list[str] = StringParser.split_names(current_message)
 
