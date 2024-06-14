@@ -91,3 +91,26 @@ class StringParser:
                 char_list[i] = ""
         full_name = StringParser.split_names(message="".join(char_list))[0]
         return full_name
+
+    @staticmethod
+    def replace_escape_characters_for_markdown(message: str) -> str:
+        return (message.replace("_", '\\_')
+                .replace('*', '\\*')
+                .replace('[', '\\[')
+                .replace(']', '\\]')
+                .replace('(', '\\(')
+                .replace(')', '\\)')
+                .replace('~', '\\~')
+                .replace('`', '\\`')
+                .replace('>', '\\>')
+                .replace('#', '\\#')
+                .replace('+', '\\+')
+                .replace('+', '\\+')
+                .replace('-', '\\-')
+                .replace('=', '\\=')
+                .replace('|', '\\|')
+                .replace('{', '\\{')
+                .replace('}', '\\}')
+                .replace('.', '\\.')
+                .replace('!', '\\!')
+                )

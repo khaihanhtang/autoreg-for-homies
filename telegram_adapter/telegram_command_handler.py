@@ -1,7 +1,7 @@
 import traceback
 
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, \
-    ReplyKeyboardRemove, ForceReply, User
+    ReplyKeyboardRemove, ForceReply, User, Message
 from telegram.constants import MessageEntityType, ParseMode
 from telegram.ext import ContextTypes
 
@@ -58,7 +58,7 @@ class TelegramCommandHandler:
     COMMAND_AKA = "aka"
     CALLBACK_DATA_HELP = f"_{COMMAND_HELP}"
     CALLBACK_DATA_ALL = f"_{COMMAND_ALL}"
-    CALLBACK_DATA_DRG = f"_{COMMAND_DRG}"
+    # CALLBACK_DATA_DRG = f"_{COMMAND_DRG}"
     CALLBACK_DATA_AV = f"_{COMMAND_AV}"
 
     SECOND_CLICK_TO_DEREGISTER = False
@@ -155,98 +155,111 @@ class TelegramCommandHandler:
         query = update.callback_query
         await query.answer()
 
-        # find full name
+        full_name = StringParser.process_telegram_full_name(telegram_full_name=query.from_user.full_name)
         id_string = TelegramCommandHandler.get_id_string_from_telegram_user(user=query.from_user)
-
-        identity_message = f"(from {id_string})"
+        identity_message = (f"\\(from [{StringParser.replace_escape_characters_for_markdown(full_name)}]"
+                            + f"(tg://user?id={query.from_user.id})\\)")
 
         # handle special case for all and help
         if query.data == TelegramCommandHandler.CALLBACK_DATA_ALL:
             res = await context.bot.send_message(
                 chat_id=query.message.chat.id,
-                text=f"/{TelegramCommandHandler.COMMAND_ALL}\t{identity_message}"
+                text=f"/{TelegramCommandHandler.COMMAND_ALL}\t{identity_message}",
+                parse_mode=ParseMode.MARKDOWN_V2
             )
             await TelegramCommandHandler.run_retrieve(update=Update(update_id=res.id, message=res), context=context)
             return
         elif query.data == TelegramCommandHandler.CALLBACK_DATA_HELP:
             res = await context.bot.send_message(
                 chat_id=query.message.chat.id,
-                text=f"/{TelegramCommandHandler.COMMAND_HELP}\t{identity_message}"
+                text=f"/{TelegramCommandHandler.COMMAND_HELP}\t{identity_message}",
+                parse_mode=ParseMode.MARKDOWN_V2
             )
             await TelegramCommandHandler.run_help(update=Update(update_id=res.id, message=res), _=None)
             return
         elif query.data == TelegramCommandHandler.CALLBACK_DATA_AV:
             res = await context.bot.send_message(
                 chat_id=query.message.chat.id,
-                text=f"/{TelegramCommandHandler.COMMAND_AV}\t{identity_message}"
+                text=f"/{TelegramCommandHandler.COMMAND_AV}\t{identity_message}",
+                parse_mode=ParseMode.MARKDOWN_V2
             )
             await TelegramCommandHandler.run_av(update=Update(update_id=res.id, message=res), context=context)
             return
-        elif query.data == TelegramCommandHandler.CALLBACK_DATA_DRG:
-            slot_labels_involving_user = (TelegramCommandHandler
-                                          .auto_reg_system
-                                          .data
-                                          .collect_slot_labels_involving_user(id_string=id_string)
-                                          )
-            slot_labels_involving_user_list = [[f"/{TelegramCommandHandler.COMMAND_DRG} {id_string} {slot_label}"]
-                                               for slot_label in slot_labels_involving_user]
-            reply_keyboard_markup = ReplyKeyboardMarkup(slot_labels_involving_user_list)
-            res = await context.bot.send_message(
-                chat_id=query.message.chat.id,
-                text=f"Yêu cầu hủy đăng kí từ {id_string}!"
-            )
-            message = "Không có slot phù hợp để hủy"
-            if len(slot_labels_involving_user_list) > 0:
-                message = "Vui lòng chọn từ bàn phím!"
-            await TelegramCommandHandler.reply_message(
-                update=Update(update_id=res.id, message=res),
-                text=message,
-                reply_markup=reply_keyboard_markup
-            )
-            return
+        # elif query.data == TelegramCommandHandler.CALLBACK_DATA_DRG:
+        #     slot_labels_involving_user = (TelegramCommandHandler
+        #                                   .auto_reg_system
+        #                                   .data
+        #                                   .collect_slot_labels_involving_user(id_string=id_string)
+        #                                   )
+        #     slot_labels_involving_user_list = [[f"/{TelegramCommandHandler.COMMAND_DRG} {id_string} {slot_label}"]
+        #                                        for slot_label in slot_labels_involving_user]
+        #     reply_keyboard_markup = ReplyKeyboardMarkup(slot_labels_involving_user_list)
+        #     res = await context.bot.send_message(
+        #         chat_id=query.message.chat.id,
+        #         text=f"Yêu cầu hủy đăng kí từ {id_string}!"
+        #     )
+        #     message = "Không có slot phù hợp để hủy"
+        #     if len(slot_labels_involving_user_list) > 0:
+        #         message = "Vui lòng chọn từ bàn phím!"
+        #     await TelegramCommandHandler.reply_message(
+        #         update=Update(update_id=res.id, message=res),
+        #         text=message,
+        #         reply_markup=reply_keyboard_markup
+        #     )
+        #     return
 
         slot_label = query.data
-        slot = TelegramCommandHandler.auto_reg_system.data.get_slot(slot_label=slot_label)
+        # slot = TelegramCommandHandler.auto_reg_system.data.get_slot(slot_label=slot_label)
 
-        if TelegramCommandHandler.SECOND_CLICK_TO_DEREGISTER:
-            use_reg = False
-            if not slot.is_in_any_list(proposed_name=id_string):
-                use_reg = True
-            if slot.is_in_reservations(proposed_name=id_string):
-                reservation = slot.get_reservation(proposed_name=id_string)
-                if not reservation.is_playable:
-                    use_reg = True
-
-            if use_reg:
-                res = await context.bot.send_message(
-                    chat_id=query.message.chat.id,
-                    text=f"/{TelegramCommandHandler.COMMAND_RG} {id_string} {slot_label}"
-                )
-                await TelegramCommandHandler.run_reg(
-                    update=Update(update_id=res.id, message=res),
-                    context=context,
-                    effective_user=query.from_user.username
-                )
-            else:
-                res = await context.bot.send_message(
-                    chat_id=query.message.chat.id,
-                    text=f"/{TelegramCommandHandler.COMMAND_DEREG} {id_string} {slot_label}"
-                )
-                await TelegramCommandHandler.run_dereg(
-                    update=Update(update_id=res.id, message=res),
-                    context=context,
-                    effective_user=query.from_user.username
-                )
-        else:
-            res = await context.bot.send_message(
-                chat_id=query.message.chat.id,
-                text=f"/{TelegramCommandHandler.COMMAND_RG} {id_string} {slot_label}"
-            )
-            await TelegramCommandHandler.run_reg(
-                update=Update(update_id=res.id, message=res),
-                context=context,
-                effective_user=query.from_user.username
-            )
+        # if TelegramCommandHandler.SECOND_CLICK_TO_DEREGISTER:
+        #     use_reg = False
+        #     if not slot.is_in_any_list(proposed_name=id_string):
+        #         use_reg = True
+        #     if slot.is_in_reservations(proposed_name=id_string):
+        #         reservation = slot.get_reservation(proposed_name=id_string)
+        #         if not reservation.is_playable:
+        #             use_reg = True
+        #
+        #     if use_reg:
+        #         res = await context.bot.send_message(
+        #             chat_id=query.message.chat.id,
+        #             text=f"/{TelegramCommandHandler.COMMAND_RG} {id_string} {slot_label}"
+        #         )
+        #         await TelegramCommandHandler.run_reg(
+        #             update=Update(update_id=res.id, message=res),
+        #             context=context,
+        #             effective_user=query.from_user.username
+        #         )
+        #     else:
+        #         res = await context.bot.send_message(
+        #             chat_id=query.message.chat.id,
+        #             text=f"/{TelegramCommandHandler.COMMAND_DEREG} {id_string} {slot_label}"
+        #         )
+        #         await TelegramCommandHandler.run_dereg(
+        #             update=Update(update_id=res.id, message=res),
+        #             context=context,
+        #             effective_user=query.from_user.username
+        #         )
+        # else:
+        message = f"/{TelegramCommandHandler.COMMAND_RG} {id_string} {slot_label}"
+        res = await context.bot.send_message(
+            chat_id=query.message.chat.id,
+            text=f"{StringParser.replace_escape_characters_for_markdown(message=message)}\t{identity_message}",
+            parse_mode=ParseMode.MARKDOWN_V2
+        )
+        new_message = Message(
+            message_id=res.id,
+            date=res.date,
+            chat=res.chat,
+            from_user=res.from_user,
+            text=message
+        )
+        new_message.set_bot(res.get_bot())
+        await TelegramCommandHandler.run_reg(
+            update=Update(update_id=res.id, message=new_message),
+            context=context,
+            effective_user=query.from_user.username
+        )
 
     @staticmethod
     async def write_data_and_update_bot_message_for_full_list(
