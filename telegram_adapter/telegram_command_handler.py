@@ -6,6 +6,7 @@ from telegram.constants import MessageEntityType, ParseMode
 from telegram.ext import ContextTypes
 
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
+from auto_registration_system.command_handler.handler_reg import RegHandler
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from time_manager import TimeManager
 from tracer import Tracer
@@ -374,7 +375,8 @@ class TelegramCommandHandler:
         if effective_user is None:
             effective_user = update.effective_user.username
 
-        message = TelegramCommandHandler.auto_reg_system.handle_register(
+        response, suggestion = TelegramCommandHandler.auto_reg_system.handle_register(
+            command_string_for_suggestion=TelegramCommandHandler.COMMAND_DRG,
             username=effective_user,
             message=update.message.text,
             chat_id=update.message.chat_id
@@ -382,8 +384,15 @@ class TelegramCommandHandler:
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
             context=context,
-            message=message
+            message=response
         )
+
+        if suggestion is not None:
+            await TelegramCommandHandler.reply_message(
+                update=update,
+                text=suggestion,
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
 
     @staticmethod
     async def run_reserve(update: Update, context: ContextTypes.DEFAULT_TYPE, effective_user: str or None = None):

@@ -50,9 +50,9 @@ class DeregHandler:
                                 found = True
                                 break
                     if found:
-                        response += f"{name} vừa được xóa khỏi slot {slot_label}\\!\n"
+                        response += f"{StringParser.replace_escape_characters_for_markdown(name)} vừa được xóa khỏi slot {slot_label}\\!\n"
                     else:
-                        response += f"{name} không tồn tại trong slot {slot_label}\\!\n"
+                        response += f"{StringParser.replace_escape_characters_for_markdown(name)} không tồn tại trong slot {slot_label}\\!\n"
         # clean empty elements
         new_players: list[str] = list()
         new_reservations: list[Reservation] = list()

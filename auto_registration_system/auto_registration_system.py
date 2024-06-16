@@ -85,12 +85,22 @@ class AutoRegistrationSystem:
             return "Không còn slot trống!"
         return res
 
-    def handle_register(self, username: str, message: str, chat_id: int) -> str:
+    def handle_register(self, command_string_for_suggestion: str, username: str, message: str, chat_id: int) \
+            -> (str, str or None):
         try:
             self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
-            return RegHandler.handle(message=message, data=self._data)
+            response, conflict_names, slot_label = RegHandler.handle(message=message, data=self._data)
+
+            if conflict_names is not None:
+                suggestion = RegHandler.make_suggestion(
+                    command_string=command_string_for_suggestion,
+                    id_strings=conflict_names,
+                    slot_label=slot_label
+                )
+                return response, suggestion
+            return response, None
         except Exception as e:
             return repr(e)
 

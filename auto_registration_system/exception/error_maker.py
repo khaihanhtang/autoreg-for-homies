@@ -1,3 +1,4 @@
+from auto_registration_system.exception.exception_name_conflict import NameConflictException
 from auto_registration_system.exception.exception_syntax_error import SyntaxErrorException
 
 
@@ -24,8 +25,8 @@ class ErrorMaker:
         return Exception(f"Slot '{message}' bị trùng!")
 
     @staticmethod
-    def make_name_conflict_exception(message: str) -> Exception:
-        return Exception(f"'{message}' đã được đăng kí trước đó!")
+    def make_name_conflict_exception(message: str) -> NameConflictException:
+        return NameConflictException(message)
 
     @staticmethod
     def make_name_not_found_exception(message: str) -> Exception:
