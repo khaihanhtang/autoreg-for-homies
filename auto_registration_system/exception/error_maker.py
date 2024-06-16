@@ -1,8 +1,11 @@
+from auto_registration_system.exception.exception_syntax_error import SyntaxErrorException
+
+
 class ErrorMaker:
 
     @staticmethod
-    def make_syntax_error_exception(message: str) -> Exception:
-        return Exception(f"Có thể sai cú pháp tại '{message}'!")
+    def make_syntax_error_exception(message: str) -> SyntaxErrorException:
+        return SyntaxErrorException(message=message)
 
     @staticmethod
     def make_dv_not_found_exception(message: str) -> Exception:

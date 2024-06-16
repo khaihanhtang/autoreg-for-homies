@@ -14,6 +14,7 @@ from auto_registration_system.data_structure.registration_data import Registrati
 from auto_registration_system.data_structure.admin_manager import AdminManager
 from auto_registration_system.command_handler.handler_new import NewHandler
 from auto_registration_system.exception.error_maker import ErrorMaker
+from auto_registration_system.exception.exception_syntax_error import SyntaxErrorException
 from auto_registration_system.term import Term
 from string_parser.string_parser import StringParser
 from auto_registration_system.data_structure.identity_manager import IdentityManager
@@ -84,7 +85,7 @@ class AutoRegistrationSystem:
             return "Không còn slot trống!"
         return res
 
-    def handle_reg(self, username: str, message: str, chat_id: int) -> str:
+    def handle_register(self, username: str, message: str, chat_id: int) -> str:
         try:
             self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
@@ -102,12 +103,22 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e)
 
-    def handle_deregister(self, username: str, message: str, chat_id: int) -> str:
+    def handle_deregister(self, command_string: str, username: str, id_string: str, message: str, chat_id: int) -> str:
         try:
             self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
             self._chat_manager.enforce_chat_id(chat_id=chat_id)
             StringParser.enforce_single_line_message(message=message)
             return DeregHandler.handle(message=message, data=self._data)
+        except SyntaxErrorException:
+            response: str = "Lỗi cú pháp\\!"
+            suggestion: str = DeregHandler.make_suggestion(
+                command_string=command_string,
+                id_string=id_string,
+                data=self._data
+            )
+            if suggestion is not None:
+                return f"{response}\n{suggestion}"
+            return response
         except Exception as e:
             return repr(e)
 

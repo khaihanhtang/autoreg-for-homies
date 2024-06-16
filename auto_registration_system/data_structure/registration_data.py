@@ -4,7 +4,7 @@ from .slot_manager import SlotManager
 
 class RegistrationData:
     def __init__(self):
-        self._bookings_by_date_venue: dict = {}
+        self._bookings_by_date_venue: dict[str, dict[str, SlotManager]] = dict()
 
     @property
     def bookings_by_date_venue(self):
@@ -65,4 +65,11 @@ class RegistrationData:
             for slot_label, slot in self._bookings_by_date_venue[date_venue].items():
                 if slot.is_in_any_list(proposed_name=id_string):
                     res.append(slot_label)
+        return res
+
+    def collect_all_slots_with_labels(self) -> list[(str, SlotManager)]:
+        res: list[(str, SlotManager)] = list()
+        for date_venue in self._bookings_by_date_venue:
+            for slot_label, slot in self._bookings_by_date_venue[date_venue].items():
+                res.append((slot_label, slot))
         return res
