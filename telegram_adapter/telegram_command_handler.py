@@ -6,6 +6,7 @@ from telegram.constants import MessageEntityType, ParseMode
 from telegram.ext import ContextTypes
 
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
+from auto_registration_system.command_handler.handler_reg import RegHandler
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from time_manager import TimeManager
 from tracer import Tracer
@@ -265,7 +266,8 @@ class TelegramCommandHandler:
     async def write_data_and_update_bot_message_for_full_list(
             update: Update,
             context: ContextTypes.DEFAULT_TYPE,
-            message: str or None
+            message: str or None,
+            parse_mode: ParseMode or None=None
     ):
         all_slots_as_string = TelegramCommandHandler.auto_reg_system.get_all_slots_as_string()
 
@@ -288,7 +290,7 @@ class TelegramCommandHandler:
 
         # inform message
         if message is not None:
-            await TelegramCommandHandler.reply_message(update=update, text=message)
+            await TelegramCommandHandler.reply_message(update=update, text=message, parse_mode=parse_mode)
 
         # delete previous message
         if TelegramCommandHandler.last_chat_id is not None and TelegramCommandHandler.last_message_id is not None:
@@ -356,7 +358,6 @@ class TelegramCommandHandler:
     @staticmethod
     async def run_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
         TelegramCommandHandler.log_message_from_user(update=update)
-
         message = TelegramCommandHandler.auto_reg_system.handle_new(
             username=update.effective_user.username,
             message=update.message.text
@@ -374,7 +375,8 @@ class TelegramCommandHandler:
         if effective_user is None:
             effective_user = update.effective_user.username
 
-        message = TelegramCommandHandler.auto_reg_system.handle_reg(
+        response, suggestion = TelegramCommandHandler.auto_reg_system.handle_register(
+            command_string_for_suggestion=TelegramCommandHandler.COMMAND_DRG,
             username=effective_user,
             message=update.message.text,
             chat_id=update.message.chat_id
@@ -382,8 +384,15 @@ class TelegramCommandHandler:
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
             context=context,
-            message=message
+            message=response
         )
+
+        if suggestion is not None:
+            await TelegramCommandHandler.reply_message(
+                update=update,
+                text=suggestion,
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
 
     @staticmethod
     async def run_reserve(update: Update, context: ContextTypes.DEFAULT_TYPE, effective_user: str or None = None):
@@ -404,21 +413,26 @@ class TelegramCommandHandler:
         )
 
     @staticmethod
-    async def run_dereg(update: Update, context: ContextTypes.DEFAULT_TYPE, effective_user: str or None = None):
+    async def run_dereg(update: Update, context: ContextTypes.DEFAULT_TYPE, effective_user: User or None = None):
         TelegramCommandHandler.log_message_from_user(update=update)
 
         if effective_user is None:
-            effective_user = update.effective_user.username
+            effective_user = update.effective_user
+
+        id_string = TelegramCommandHandler.get_id_string_from_telegram_user(user=effective_user)
 
         message = TelegramCommandHandler.auto_reg_system.handle_deregister(
-            username=effective_user,
+            command_string=TelegramCommandHandler.COMMAND_DRG,
+            username=effective_user.username,
+            id_string=id_string,
             message=update.message.text,
             chat_id=update.message.chat_id
         )
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
             context=context,
-            message=message
+            message=message,
+            parse_mode=ParseMode.MARKDOWN_V2
         )
 
     @staticmethod

@@ -1,11 +1,12 @@
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.exception.error_maker import ErrorMaker
+from auto_registration_system.exception.exception_name_conflict import NameConflictException
 from string_parser.string_parser import StringParser
 
 
 class RegHandler:
     @staticmethod
-    def handle(message: str, data: RegistrationData) -> str:
+    def handle(message: str, data: RegistrationData) -> (str, list[str] or None, str):
         original_message = message
         message = StringParser.remove_command(message=message)
         try:
@@ -18,6 +19,7 @@ class RegHandler:
 
         response: str = ""
         count_processed: int = 0
+        conflict_names: list[str] = list()
         for name in players:
             if len(name) > 0:
                 count_processed += 1
@@ -25,11 +27,25 @@ class RegHandler:
                     StringParser.enforce_message_containing_alpha(message=name)
                     data.register_player(slot_label=slot_label, player=name)
                     response += f"{name} vừa được thêm vào slot {slot_label}\n"
+                except NameConflictException as e:
+                    response += f"{repr(e)}\n"
+                    conflict_names.append(name)
                 except Exception as e:
                     response += f"{repr(e)}\n"
         if count_processed == 0:
-            return "Không có gì thay đổi!"
+            return "Không có gì thay đổi!", None, slot_label
 
         data.move_all_playable_players()
 
-        return response
+        if len(conflict_names) == 0:
+            return response, None, slot_label
+        return response, conflict_names, slot_label
+
+    @staticmethod
+    def make_suggestion(command_string: str, id_strings: list[str], slot_label: str) -> str or None:
+        count = 0
+        res: str = ""
+        for name in id_strings:
+            res += f"{count + 1}\\. `/{command_string} {StringParser.replace_escape_characters_for_markdown(message=name)} {slot_label}\n`"
+            count += 1
+        return f"Nếu muốn hủy đăng kí, bạn có thể thử bằng cách bấm để sao chép:\n{res}"

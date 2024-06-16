@@ -22,19 +22,19 @@ class DeregHandler:
         count_processed: int = 0
         slot: SlotManager = data.get_slot(slot_label=slot_label)
         if slot is None:
-            return f"Không tìm thấy slot {slot_label}!"
+            return f"Không tìm thấy slot {slot_label}\\!"
         for name in players:
             if len(name) > 0:
                 count_processed += 1
                 try:
                     index = int(name) - 1
                     if index < 0 or index >= slot.max_num_players:
-                        response += f"Vị trí {index + 1} không phù hợp!\n"
+                        response += f"Vị trí {index + 1} không phù hợp\\!\n"
                     elif index >= len(slot.players) or slot.players[index] == "":
-                        response += f"Vị trí {index + 1} đã bị xóa hoặc không tồn tại!\n"
+                        response += f"Vị trí {index + 1} đã bị xóa hoặc không tồn tại\\!\n"
                     else:
-                        response += f"""{slot.players[index]} (từ vị trí {index + 1}) 
-                                    vừa được xóa khỏi slot {slot_label}!\n"""
+                        response += (f"{slot.players[index]} \\(từ vị trí {index + 1}\\) "
+                                     + f"vừa được xóa khỏi slot {slot_label}\\!\n")
                         slot.players[index] = ""
                 except ValueError:
                     found: bool = False
@@ -50,9 +50,9 @@ class DeregHandler:
                                 found = True
                                 break
                     if found:
-                        response += f"{name} vừa được xóa khỏi slot {slot_label}!\n"
+                        response += f"{StringParser.replace_escape_characters_for_markdown(name)} vừa được xóa khỏi slot {slot_label}\\!\n"
                     else:
-                        response += f"{name} không tồn tại trong slot {slot_label}!\n"
+                        response += f"{StringParser.replace_escape_characters_for_markdown(name)} không tồn tại trong slot {slot_label}\\!\n"
         # clean empty elements
         new_players: list[str] = list()
         new_reservations: list[Reservation] = list()
@@ -66,8 +66,20 @@ class DeregHandler:
         slot.reservations = new_reservations
         slot.move_all_playable_players()
         if count_processed == 0:
-            return "Không có gì thay đổi!"
+            return "Không có gì thay đổi\\!"
 
         data.move_all_playable_players()
 
         return response
+
+    @staticmethod
+    def make_suggestion(command_string: str, id_string: str, data: RegistrationData) -> str or None:
+        res: str = ""
+        count: int = 0
+        for slot_label, slot in data.collect_all_slots_with_labels():
+            if slot.is_in_any_list(proposed_name=id_string):
+                res += f"{count + 1}\\. `/{command_string} {StringParser.replace_escape_characters_for_markdown(message=id_string)} {slot_label}`\n"
+                count += 1
+        if len(res) == 0:
+            return None
+        return f"Bạn có thể thử một những lệnh sau \\(bấm để sao chép\\):\n{res}"
