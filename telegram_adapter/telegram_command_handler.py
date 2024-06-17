@@ -72,6 +72,8 @@ class TelegramCommandHandler:
             reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply | None = None,
     ):
         try:
+            if len(text.strip()) == 0:
+                text = "Có lỗi xảy ra! Tin nhắn được gửi rỗng!"
             return await update.message.reply_text(text=text, parse_mode=parse_mode, reply_markup=reply_markup)
         except Exception as e:
             TelegramCommandHandler.tracer.log(
