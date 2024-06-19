@@ -1,5 +1,3 @@
-import traceback
-
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, \
     ReplyKeyboardRemove, ForceReply, User, Message, CallbackQuery
 from telegram.constants import MessageEntityType, ParseMode
@@ -93,7 +91,7 @@ class TelegramCommandHandler:
         return f"{TelegramCommandHandler.CALLBACK_DATA_RG} {slot_label}"
 
     @staticmethod
-    def make_callback_data_for_drg(telegram_id: int, slot_label: str) -> str:
+    def make_callback_data_for_drg_for_specific_slot(telegram_id: int, slot_label: str) -> str:
         return f"{TelegramCommandHandler.CALLBACK_DATA_DRG} {telegram_id} {slot_label}"
 
     @staticmethod
@@ -179,6 +177,16 @@ class TelegramCommandHandler:
         return False
 
     @staticmethod
+    def is_callback_data_drg_initial(query_data: str) -> bool:
+        return query_data == TelegramCommandHandler.CALLBACK_DATA_DRG
+
+    @staticmethod
+    def is_callback_data_drg_for_specific_slot(query_data: str) -> bool:
+        callback_data_drg_len = len(TelegramCommandHandler.CALLBACK_DATA_DRG)
+        return (len(query_data) > callback_data_drg_len
+                and query_data[:callback_data_drg_len] == TelegramCommandHandler.CALLBACK_DATA_DRG)
+
+    @staticmethod
     async def run_button_drg_initially(query: CallbackQuery, context: ContextTypes.DEFAULT_TYPE):
         inline_button_list = None
         id_string = TelegramCommandHandler.get_id_string_from_telegram_user(user=query.from_user)
@@ -191,15 +199,21 @@ class TelegramCommandHandler:
             telegram_id=query.from_user.id,
             full_name=query.from_user.full_name
         )
+
+        alias_or_full_name = TelegramCommandHandler.auto_reg_system.identity_manager.get_alias_or_full_name(
+            telegram_id=query.from_user.id,
+            full_name=StringParser.process_telegram_full_name(telegram_full_name=query.from_user.full_name)
+        )
         if len(slots_able_to_be_deregistered) > 0:
-            response += f"Những slot có thể hủy đăng kí cho {clickable_link_for_telegram_id}"
+            response += (f"Những slot có thể hủy đăng kí cho {clickable_link_for_telegram_id} "
+                         + f"với tên/alias {StringParser.replace_escape_characters_for_markdown(alias_or_full_name)}")
             button_list = []
             current_line_button_list = None
             button_count = 0
             for slot_label, slot in slots_able_to_be_deregistered:
                 button = InlineKeyboardButton(
                     text=f"slot {slot_label}",
-                    callback_data=TelegramCommandHandler.make_callback_data_for_drg(
+                    callback_data=TelegramCommandHandler.make_callback_data_for_drg_for_specific_slot(
                         telegram_id=query.from_user.id,
                         slot_label=slot_label
                     )
@@ -215,13 +229,63 @@ class TelegramCommandHandler:
                 button_list.append(current_line_button_list)
             inline_button_list = InlineKeyboardMarkup(inline_keyboard=button_list)
         else:
-            response += f"Không có slot nào cho {clickable_link_for_telegram_id} hủy đăng kí\\!"
+            response += (f"Không có slot nào cho {clickable_link_for_telegram_id} "
+                         + f"\\(với tên/alias {StringParser.replace_escape_characters_for_markdown(alias_or_full_name)}\\) để hủy đăng kí\\!")
 
         await context.bot.send_message(
             chat_id=query.message.chat.id,
             text=response,
             parse_mode=ParseMode.MARKDOWN_V2,
             reply_markup=inline_button_list
+        )
+
+    @staticmethod
+    async def run_button_drg_for_specific_slot(
+            context: ContextTypes.DEFAULT_TYPE,
+            from_chat_id: int,
+            from_message_id: int,
+            sender: User,
+            query_data: str,
+            id_string: str,
+            identity_message: str
+    ):
+        clickable_link_for_sender_telegram_id: str = StringParser.make_clickable_link_for_telegram_id(
+            telegram_id=sender.id,
+            full_name=sender.full_name
+        )
+
+        callback_data = StringParser.remove_first_word(message=query_data)
+        enforced_telegram_id = int(StringParser.get_first_word(message=callback_data))
+        if enforced_telegram_id != sender.id:
+            await context.bot.send_message(
+                chat_id=from_chat_id,
+                text=f"{clickable_link_for_sender_telegram_id} không được phép hủy đăng kí giúp thành viên khác bằng cách này\\!",
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
+            return
+        slot_label = StringParser.remove_first_word(message=callback_data)
+        message = f"/{TelegramCommandHandler.COMMAND_DRG} {id_string} {slot_label}"
+        res = await context.bot.send_message(
+            chat_id=from_chat_id,
+            text=f"{StringParser.replace_escape_characters_for_markdown(message=message)}\t{identity_message}",
+            parse_mode=ParseMode.MARKDOWN_V2
+        )
+        new_message = Message(
+            message_id=res.id,
+            date=res.date,
+            chat=res.chat,
+            from_user=res.from_user,
+            text=message
+        )
+        new_message.set_bot(res.get_bot())
+        await TelegramCommandHandler.run_dereg(
+            update=Update(update_id=res.id, message=new_message),
+            context=context,
+            effective_user=sender
+        )
+        await context.bot.deleteMessage(
+            message_id=from_message_id,
+            chat_id=from_chat_id
         )
 
     @staticmethod
@@ -261,9 +325,6 @@ class TelegramCommandHandler:
             )
             await TelegramCommandHandler.run_av(update=Update(update_id=res.id, message=res), context=context)
             return
-        elif query.data == TelegramCommandHandler.CALLBACK_DATA_DRG:
-            await TelegramCommandHandler.run_button_drg_initially(query=query, context=context)
-            return
         elif TelegramCommandHandler.is_callback_data_rg(query_data=query.data):
             slot_label = StringParser.get_last_word(message=query.data)
             message = f"/{TelegramCommandHandler.COMMAND_RG} {id_string} {slot_label}"
@@ -284,6 +345,20 @@ class TelegramCommandHandler:
                 update=Update(update_id=res.id, message=new_message),
                 context=context,
                 effective_user=query.from_user.username
+            )
+            return
+        elif TelegramCommandHandler.is_callback_data_drg_initial(query_data=query.data):
+            await TelegramCommandHandler.run_button_drg_initially(query=query, context=context)
+            return
+        elif TelegramCommandHandler.is_callback_data_drg_for_specific_slot(query_data=query.data):
+            await TelegramCommandHandler.run_button_drg_for_specific_slot(
+                context=context,
+                from_chat_id=query.message.chat.id,
+                from_message_id=query.message.message_id,
+                sender=query.from_user,
+                query_data=query.data,
+                id_string=id_string,
+                identity_message=identity_message
             )
             return
 
