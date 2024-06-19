@@ -4,3 +4,4 @@ class Term:
     NUM_PLAYERS = "#players:"
     RESERVATION = "reserve"
     PLAYABLE = "(playable)"
+    INDENT_SPACE = "   "

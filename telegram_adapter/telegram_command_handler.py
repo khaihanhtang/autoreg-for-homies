@@ -6,7 +6,6 @@ from telegram.constants import MessageEntityType, ParseMode
 from telegram.ext import ContextTypes
 
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
-from auto_registration_system.command_handler.handler_reg import RegHandler
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from time_manager import TimeManager
 from tracer import Tracer
@@ -337,7 +336,8 @@ class TelegramCommandHandler:
             text="Danh sách các slot còn thiếu người:\n\n" +
                  TelegramCommandHandler.auto_reg_system.get_available_slots_as_string(),
             reply_markup=TelegramCommandHandler.make_inline_buttons_for_registration(
-                data=TelegramCommandHandler.auto_reg_system.data)
+                data=TelegramCommandHandler.auto_reg_system.data
+            )
         )
         new_av_chat_id = sent_message_info.chat_id
         new_av_message_id = sent_message_info.message_id
