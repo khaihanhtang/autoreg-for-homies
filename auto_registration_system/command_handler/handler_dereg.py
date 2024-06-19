@@ -76,10 +76,22 @@ class DeregHandler:
     def make_suggestion(command_string: str, id_string: str, data: RegistrationData) -> str or None:
         res: str = ""
         count: int = 0
-        for slot_label, slot in data.collect_all_slots_with_labels():
-            if slot.is_in_any_list(proposed_name=id_string):
-                res += f"{count + 1}\\. `/{command_string} {StringParser.replace_escape_characters_for_markdown(message=id_string)} {slot_label}`\n"
-                count += 1
+        slots_able_to_be_deregistered = DeregHandler.search_for_slots_able_to_be_deregistered(
+            id_string=id_string,
+            data=data
+        )
+        for slot_label, slot in slots_able_to_be_deregistered:
+            res += f"{count + 1}\\. `/{command_string} "
+            res += f"{StringParser.replace_escape_characters_for_markdown(message=id_string)} {slot_label}`\n"
+            count += 1
         if len(res) == 0:
             return None
         return f"Bạn có thể thử một những lệnh sau \\(bấm để sao chép\\):\n{res}"
+
+    @staticmethod
+    def search_for_slots_able_to_be_deregistered(id_string: str, data: RegistrationData) -> list[(str, SlotManager)]:
+        res: list[(str, SlotManager)] = list()
+        for slot_label, slot in data.collect_all_slots_with_labels():
+            if slot.is_in_any_list(proposed_name=id_string):
+                res.append((slot_label, slot))
+        return res
