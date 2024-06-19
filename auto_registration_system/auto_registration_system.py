@@ -44,18 +44,19 @@ class AutoRegistrationSystem:
         res = ""
         for date_venue_name, date_venue_data in data.bookings_by_date_venue.items():
             res += f"{Term.DATE_VENUE} {date_venue_name}\n"
-            for slot_label, slot_data in date_venue_data.items():
-                res += f"[{slot_label}] {slot_data.slot_name}, {Term.NUM_PLAYERS} {slot_data.max_num_players}\n"
-                for i in range(slot_data.max_num_players):
-                    res += f"   {i + 1}."
-                    if i < len(slot_data.players) and slot_data.players[i] is not None:
-                        res += f" {slot_data.players[i]}"
-                    res += "\n"
-                for reservation in slot_data.reservations:
-                    res += f"   {Term.RESERVATION}. {reservation.name}"
-                    if reservation.is_playable:
-                        res += f" {Term.PLAYABLE}"
-                    res += "\n"
+            for slot_label, slot in date_venue_data.items():
+                res += slot.to_string(slot_label=slot_label)
+        return res
+
+    @staticmethod
+    def convert_counts_from_available_slots_to_string(data: RegistrationData) -> str or None:
+        if data is None:
+            return None
+        res = ""
+        for date_venue_name, date_venue_data in data.bookings_by_date_venue.items():
+            res += f"{Term.DATE_VENUE} {date_venue_name}\n"
+            for slot_label, slot in date_venue_data.items():
+                res += f"{Term.INDENT_SPACE}[{slot_label}] Còn thiếu {slot.get_num_available()} người.\n"
         return res
 
     def handle_new(self, username: str, message: str) -> str:
@@ -78,7 +79,7 @@ class AutoRegistrationSystem:
         return AutoRegistrationSystem.convert_registrations_to_string(data=self._data)
 
     def get_available_slots_as_string(self) -> str:
-        res: str = AutoRegistrationSystem.convert_registrations_to_string(
+        res: str = AutoRegistrationSystem.convert_counts_from_available_slots_to_string(
             data=AvHandler.handle(data=self._data)
         )
         if res is None or len(res) == 0:

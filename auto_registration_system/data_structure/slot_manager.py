@@ -1,5 +1,6 @@
 from .reservation import Reservation
 from ..exception.error_maker import ErrorMaker
+from ..term import Term
 
 
 class SlotManager:
@@ -151,3 +152,20 @@ class SlotManager:
             for i, reservation in enumerate(self._reservations):
                 if reservation.name == proposed_name:
                     self._reservations.pop(i)
+
+    def to_string(self, slot_label: str) -> str:
+        res = f"[{slot_label}] {self._slot_name}, {Term.NUM_PLAYERS} {self._max_num_players}\n"
+        for i in range(self._max_num_players):
+            res += f"{Term.INDENT_SPACE}{i + 1}."
+            if i < len(self._players) and self._players[i] is not None:
+                res += f" {self._players[i]}"
+            res += "\n"
+        for reservation in self._reservations:
+            res += f"{Term.INDENT_SPACE}{Term.RESERVATION}. {reservation.name}"
+            if reservation.is_playable:
+                res += f" {Term.PLAYABLE}"
+            res += "\n"
+        return res
+
+    def get_num_available(self) -> int:
+        return self._max_num_players - len(self._players)
