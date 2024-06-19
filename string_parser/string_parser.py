@@ -114,3 +114,7 @@ class StringParser:
                 .replace('.', '\\.')
                 .replace('!', '\\!')
                 )
+
+    @staticmethod
+    def make_clickable_link_for_telegram_id(telegram_id: int, full_name: str) -> str:
+        return f"[{StringParser.replace_escape_characters_for_markdown(full_name)}](tg://user?id={telegram_id})"
