@@ -639,6 +639,8 @@ class TelegramCommandHandler:
         response += f"/{TelegramCommandHandler.COMMAND_RESERVE} [tên 1], ..., [tên n] [slot]\t(dự bị)\n"
         response += f"/{TelegramCommandHandler.COMMAND_ALL}\t(hiện đầy đủ danh sách)\n"
         response += f"/{TelegramCommandHandler.COMMAND_AV}\t(hiện các slot còn thiếu người)\n"
+        response += f"/{TelegramCommandHandler.COMMAND_AKA} [alias]\t(người dùng tự cài đặt alias)\n"
+        response += f"/{TelegramCommandHandler.COMMAND_AKA}\t(người dùng xem alias của chính mình)\n"
         response += f"\n"
         response += f"Các lệnh rút ngắn:\n"
         response += f"/{TelegramCommandHandler.COMMAND_RG}\t(giống như /reg)\n"
