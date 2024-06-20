@@ -259,7 +259,8 @@ class TelegramCommandHandler:
         if enforced_telegram_id != sender.id:
             await context.bot.send_message(
                 chat_id=from_chat_id,
-                text=f"{clickable_link_for_sender_telegram_id} không được phép hủy đăng kí giúp thành viên khác bằng cách này\\!",
+                text=f"{clickable_link_for_sender_telegram_id} "
+                     + "không được phép hủy đăng kí giúp thành viên khác bằng cách này\\!",
                 parse_mode=ParseMode.MARKDOWN_V2
             )
             return
@@ -283,10 +284,13 @@ class TelegramCommandHandler:
             context=context,
             effective_user=sender
         )
-        await context.bot.deleteMessage(
-            message_id=from_message_id,
-            chat_id=from_chat_id
-        )
+        try:
+            await context.bot.deleteMessage(
+                message_id=from_message_id,
+                chat_id=from_chat_id
+            )
+        except Exception:
+            TelegramCommandHandler.log_message(message="Failed to delete previous message!")
 
     @staticmethod
     async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -400,7 +404,7 @@ class TelegramCommandHandler:
                     chat_id=TelegramCommandHandler.last_chat_id
                 )
             except Exception:
-                pass
+                TelegramCommandHandler.log_message(message="Failed to delete previous message!")
         TelegramCommandHandler.last_chat_id = new_chat_id
         TelegramCommandHandler.last_message_id = new_message_id
 
@@ -410,6 +414,10 @@ class TelegramCommandHandler:
             message=f"(from {TelegramCommandHandler.get_id_string_from_telegram_user(user=update.message.from_user)})"
                     + f" {update.message.text}"
         )
+
+    @staticmethod
+    def log_message(message: str):
+        TelegramCommandHandler.tracer.log(message=message)
 
     @staticmethod
     async def run_hello(update: Update, _):
@@ -449,7 +457,7 @@ class TelegramCommandHandler:
                     chat_id=TelegramCommandHandler.last_av_chat_id
                 )
             except Exception:
-                pass
+                TelegramCommandHandler.log_message(message="Failed to delete message!")
 
         # record id of current message
         if new_av_chat_id is not None and new_av_message_id is not None:
@@ -631,6 +639,8 @@ class TelegramCommandHandler:
         response += f"/{TelegramCommandHandler.COMMAND_RESERVE} [tên 1], ..., [tên n] [slot]\t(dự bị)\n"
         response += f"/{TelegramCommandHandler.COMMAND_ALL}\t(hiện đầy đủ danh sách)\n"
         response += f"/{TelegramCommandHandler.COMMAND_AV}\t(hiện các slot còn thiếu người)\n"
+        response += f"/{TelegramCommandHandler.COMMAND_AKA} [alias]\t(người dùng tự cài đặt alias)\n"
+        response += f"/{TelegramCommandHandler.COMMAND_AKA}\t(người dùng xem alias của chính mình)\n"
         response += f"\n"
         response += f"Các lệnh rút ngắn:\n"
         response += f"/{TelegramCommandHandler.COMMAND_RG}\t(giống như /reg)\n"
