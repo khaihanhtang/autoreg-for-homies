@@ -55,6 +55,7 @@ class TelegramCommandHandler:
     COMMAND_HELP = "help"
     COMMAND_HISTORY = "history"
     COMMAND_AKA = "aka"
+    COMMAND_RESET = "reset"
     CALLBACK_DATA_HELP = f"_{COMMAND_HELP}"
     CALLBACK_DATA_ALL = f"_{COMMAND_ALL}"
     CALLBACK_DATA_DRG = f"_{COMMAND_DRG}"
@@ -475,6 +476,17 @@ class TelegramCommandHandler:
             update=update,
             context=context,
             message=message
+        )
+
+    @staticmethod
+    async def run_reset(update: Update, _):
+        TelegramCommandHandler.log_message_from_user(update=update)
+        message = TelegramCommandHandler.auto_reg_system.handle_reset(
+            username=update.effective_user.username
+        )
+        await TelegramCommandHandler.reply_message(
+            update=update,
+            text=message
         )
 
     @staticmethod

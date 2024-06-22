@@ -10,6 +10,9 @@ class RegistrationData:
     def bookings_by_date_venue(self):
         return self._bookings_by_date_venue
 
+    def reset(self):
+        self._bookings_by_date_venue = dict()
+
     def insert_date_venue(self, date_venue: str):
         if date_venue in self._bookings_by_date_venue:
             raise ErrorMaker.make_dv_conflict_exception(message=date_venue)
