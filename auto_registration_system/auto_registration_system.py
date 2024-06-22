@@ -59,6 +59,15 @@ class AutoRegistrationSystem:
                 res += f"{Term.INDENT_SPACE}[{slot_label}] Còn thiếu {slot.get_num_available()} người.\n"
         return res
 
+    def handle_reset(self, username: str) -> str:
+        try:
+            self._admin_manager.enforce_admin(username=username)
+        except Exception as e:
+            return repr(e)
+
+        self._data.reset()
+        return "Đã xóa toàn bộ danh sách!"
+
     def handle_new(self, username: str, message: str) -> str:
         try:
             self._admin_manager.enforce_admin(username=username)

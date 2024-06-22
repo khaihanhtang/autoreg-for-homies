@@ -32,6 +32,9 @@ app.add_handler(
     CommandHandler(command=TelegramCommandHandler.COMMAND_NEW, callback=TelegramCommandHandler.run_new)
 )
 app.add_handler(
+    CommandHandler(command=TelegramCommandHandler.COMMAND_RESET, callback=TelegramCommandHandler.run_reset)
+)
+app.add_handler(
     CommandHandler(command=TelegramCommandHandler.COMMAND_REG, callback=TelegramCommandHandler.run_reg)
 )
 app.add_handler(
