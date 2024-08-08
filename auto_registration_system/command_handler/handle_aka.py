@@ -23,7 +23,7 @@ class AkaHandler:
     @staticmethod
     def _parse_user_case(sender_id: int, sender_full_name: str, message: str, command_string: str) \
             -> (int, str, str):  # id, full_name, alias
-        raw_alias: str = message[len(command_string) + 1:]
+        raw_alias: str = StringParser.remove_command(message=message)
         if ',' in raw_alias:
             raise ErrorMaker.make_message_containing_comma_exception(message=message)
         return sender_id, sender_full_name, StringParser.split_names(message=raw_alias)[0]
@@ -38,7 +38,7 @@ class AkaHandler:
             #     command_string=command_string,
             #     message_entity=message_entity
             # )
-            raise ErrorMaker.make_syntax_error_exception(message=message) # this functionality is skipped
+            raise ErrorMaker.make_syntax_error_exception(message=message)  # this functionality is skipped
         else:
             affected_id, affected_name, affected_alias = AkaHandler._parse_user_case(
                 sender_id=sender_id,
