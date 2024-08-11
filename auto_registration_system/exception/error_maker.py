@@ -38,7 +38,7 @@ class ErrorMaker:
 
     @staticmethod
     def make_system_locked_exception() -> Exception:
-        return Exception(f"Hệ thống đã bị khóa!")
+        return Exception(f"Hệ thống đã bị khóa! Vui lòng chờ mở khóa để sử dụng!")
 
     @staticmethod
     def make_chat_id_enforcement() -> Exception:

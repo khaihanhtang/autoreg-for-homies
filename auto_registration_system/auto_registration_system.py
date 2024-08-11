@@ -112,7 +112,7 @@ class AutoRegistrationSystem:
                 return response, suggestion
             return response, None
         except Exception as e:
-            return repr(e)
+            return repr(e), None
 
     def handle_reserve(self, username: str, message: str, chat_id: int) -> str:
         try:
