@@ -10,8 +10,9 @@ class Tracer:
         self._history_file_name = history_file_name
         self._time_manager = time_manager
 
-    def log(self, message: str):
+    def log(self, message: str, is_history_required: bool = True):
         logging.info(msg=f"{message}")
-        with open(file=self._history_file_name, mode="a", encoding="utf-8") as f:
-            f.write(f"## {self._time_manager.now_to_str()}\n")
-            f.write(f"{message}\n\n")
+        if is_history_required:
+            with open(file=self._history_file_name, mode="a", encoding="utf-8") as f:
+                f.write(f"## {self._time_manager.now_to_str()}\n")
+                f.write(f"{message}\n\n")

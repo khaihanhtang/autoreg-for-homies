@@ -389,7 +389,9 @@ class TelegramCommandHandler:
             )
             new_chat_id = sent_message_info.chat_id
             new_message_id = sent_message_info.message_id
-            TelegramCommandHandler.tracer.log(message=f"(from system) \n{all_slots_as_string}")
+            TelegramCommandHandler.tracer.log(
+                message=f"(from system) \n{all_slots_as_string}"
+            )
         else:
             await TelegramCommandHandler.reply_message(update=update, text="Danh sách chơi trống!")
 
@@ -410,10 +412,11 @@ class TelegramCommandHandler:
         TelegramCommandHandler.last_message_id = new_message_id
 
     @staticmethod
-    def log_message_from_user(update: Update):
+    def log_message_from_user(update: Update, is_history_required: bool = True):
         TelegramCommandHandler.tracer.log(
             message=f"(from {TelegramCommandHandler.get_id_string_from_telegram_user(user=update.message.from_user)})"
-                    + f" {update.message.text}"
+                    + f" {update.message.text}",
+            is_history_required=is_history_required
         )
 
     @staticmethod
@@ -467,16 +470,23 @@ class TelegramCommandHandler:
 
     @staticmethod
     async def run_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        TelegramCommandHandler.log_message_from_user(update=update)
-        message = TelegramCommandHandler.auto_reg_system.handle_new(
+        (message, is_in_main_group) = TelegramCommandHandler.auto_reg_system.handle_new(
             username=update.effective_user.username,
-            message=update.message.text
+            message=update.message.text,
+            chat_id=update.message.chat_id
         )
+        TelegramCommandHandler.log_message_from_user(update=update, is_history_required=is_in_main_group)
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
             context=context,
             message=message
         )
+        if not is_in_main_group:
+            await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
+                update=update,
+                context=context,
+                message="Đây là danh sách chuẩn bị, chưa công khai!"
+            )
 
     @staticmethod
     async def run_reset(update: Update, _):
