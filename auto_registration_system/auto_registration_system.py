@@ -21,16 +21,57 @@ from auto_registration_system.data_structure.identity_manager import IdentityMan
 from datetime import datetime
 from time_manager import TimeManager
 
+
 class AutoRegistrationSystem:
 
-    def __init__(self, admins: set[str], chat_ids: set[int], alias_file_name: str):
+    class ReleaseTimeManager:
+        def __init__(self, time_manager: TimeManager):
+            self._time_manager: TimeManager = time_manager
+            self._release_time: datetime or None = None
+            self._enabled: bool = False
+
+        @property
+        def release_time(self) -> datetime or None:
+            return self._release_time
+
+        # @property
+        # def enabled(self) -> bool:
+        #    return self._enabled
+
+        def disable(self):
+            self._enabled = False
+
+        def enable(self):
+            self._enabled = True
+
+        def set_release_time(self, new_release_time: datetime):
+            if new_release_time <= self._time_manager.now():
+                raise ErrorMaker.make_release_time_invalid_exception()
+            self._release_time = new_release_time
+            self._enabled = True
+
+        def is_releasable(self) -> bool:
+            if self._enabled and self._release_time is not None and self._release_time <= self._time_manager.now():
+                return True
+            return False
+
+    def __init__(self, admins: set[str], chat_ids: set[int], alias_file_name: str, time_manager: TimeManager):
         self._data: RegistrationData or None = None
         self._pre_released_data: RegistrationData or None = None
         self._admin_manager: AdminManager = AdminManager(admins=admins)
         self._chat_manager: ChatManager = ChatManager(chat_ids=chat_ids)
         self._lock_manager: LockManager = LockManager(locked=False)
         self._identity_manager: IdentityManager = IdentityManager(alias_file_name=alias_file_name)
-        self._notification_time = datetime or None
+        self._release_time_manager: AutoRegistrationSystem.ReleaseTimeManager \
+            = AutoRegistrationSystem.ReleaseTimeManager(time_manager=time_manager)
+
+    def attempt_release_data(self) -> bool:
+        if self._release_time_manager.is_releasable():
+            self._data = self._pre_released_data
+            self._pre_released_data = None
+            self._release_time_manager.disable()
+            return True
+        return False
 
     @property
     def data(self) -> RegistrationData:
@@ -92,14 +133,14 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e), is_in_main_group
 
-    def handle_notitime(self, username: str, message: str) -> str:
+    def handle_notitime(self, username: str, message: str, time_manager: TimeManager) -> str:
         try:
             self._admin_manager.enforce_admin(username=username)
             message = StringParser.remove_command(message=message)
-            self._notification_time = str_to_timestamp(
-                time_zone=TimeManager.time_zone,
-                datetime_str=message,
-            )
+            self._release_time_manager.set_release_time(new_release_time=time_manager.str_to_datetime(message))
+            return f"Release time is set to be {time_manager.datetime_to_string(
+                self._release_time_manager.release_time
+            )}"
         except Exception as e:
             return repr(e)
 

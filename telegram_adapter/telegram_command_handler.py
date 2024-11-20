@@ -17,20 +17,23 @@ from config import Config
 
 class TelegramCommandHandler:
 
+    time_manager: TimeManager = TimeManager(
+            time_zone=Config.time_zone,
+            input_time_format=Config.input_time_format,
+            output_time_format=Config.output_time_format
+        )
+
     auto_reg_system: AutoRegistrationSystem = AutoRegistrationSystem(
         admins=Config.admins,
         chat_ids=Config.chat_ids,
-        alias_file_name=Config.alias_file_name
+        alias_file_name=Config.alias_file_name,
+        time_manager=time_manager,
     )
 
     tracer: Tracer = Tracer(
         log_file_name=Config.log_file_name,
         history_file_name=Config.history_file_name,
-        time_manager=TimeManager(
-            time_zone=Config.time_zone,
-            input_time_format=Config.input_time_format,
-            output_time_format=Config.output_time_format
-        )
+        time_manager=time_manager
     )
 
     NUM_BUTTONS_PER_LINE = 3
@@ -374,7 +377,7 @@ class TelegramCommandHandler:
 
     @staticmethod
     async def write_data_and_update_bot_message_for_full_list(
-            update: Update,
+            update: Update or None,
             context: ContextTypes.DEFAULT_TYPE,
             message: str or None,
             parse_mode: ParseMode or None = None,
@@ -386,12 +389,17 @@ class TelegramCommandHandler:
         new_chat_id = None
         new_message_id = None
         if all_slots_as_string is not None:
+            inline_buttons: InlineKeyboardMarkup = TelegramCommandHandler.make_inline_buttons_for_registration(
+                data=TelegramCommandHandler.auto_reg_system.data
+            ) if is_main_data else None
             sent_message_info = await TelegramCommandHandler.reply_message(
                 update=update,
                 text=all_slots_as_string,
-                reply_markup=TelegramCommandHandler.make_inline_buttons_for_registration(
-                    data=TelegramCommandHandler.auto_reg_system.data
-                )
+                reply_markup=inline_buttons
+            ) if update is not None else await context.bot.send_message(
+                chat_id=Config.default_chat_id,
+                text=all_slots_as_string,
+                reply_markup=inline_buttons
             )
             new_chat_id = sent_message_info.chat_id
             new_message_id = sent_message_info.message_id
@@ -399,23 +407,38 @@ class TelegramCommandHandler:
                 message=f"(from system) \n{all_slots_as_string}"
             )
         else:
-            await TelegramCommandHandler.reply_message(update=update, text="Danh sách chơi trống!")
+            to_be_sent_text = "Danh sách chơi trống!"
+            await TelegramCommandHandler.reply_message(
+                update=update, text=to_be_sent_text
+            ) if update is not None else await context.bot.send_message(
+                chat_id=Config.default_chat_id,
+                text=to_be_sent_text
+            )
 
         # inform message
         if message is not None:
-            await TelegramCommandHandler.reply_message(update=update, text=message, parse_mode=parse_mode)
+            await TelegramCommandHandler.reply_message(
+                update=update,
+                text=message,
+                parse_mode=parse_mode
+            ) if update is not None else await context.bot.send_message(
+                chat_id=Config.default_chat_id,
+                text=message,
+                parse_mode=parse_mode
+            )
 
         # delete previous message
-        if TelegramCommandHandler.last_chat_id is not None and TelegramCommandHandler.last_message_id is not None:
-            try:
-                await context.bot.deleteMessage(
-                    message_id=TelegramCommandHandler.last_message_id,
-                    chat_id=TelegramCommandHandler.last_chat_id
-                )
-            except Exception:
-                TelegramCommandHandler.log_message(message="Failed to delete previous message!")
-        TelegramCommandHandler.last_chat_id = new_chat_id
-        TelegramCommandHandler.last_message_id = new_message_id
+        if is_main_data:
+            if TelegramCommandHandler.last_chat_id is not None and TelegramCommandHandler.last_message_id is not None:
+                try:
+                    await context.bot.deleteMessage(
+                        message_id=TelegramCommandHandler.last_message_id,
+                        chat_id=TelegramCommandHandler.last_chat_id
+                    )
+                except Exception:
+                    TelegramCommandHandler.log_message(message="Failed to delete previous message!")
+            TelegramCommandHandler.last_chat_id = new_chat_id
+            TelegramCommandHandler.last_message_id = new_message_id
 
     @staticmethod
     def log_message_from_user(update: Update, is_history_required: bool = True):
@@ -489,15 +512,45 @@ class TelegramCommandHandler:
             is_main_data=is_in_main_group
         )
         if not is_in_main_group:
-            await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
+            await TelegramCommandHandler.reply_message(
                 update=update,
+                text="Đây là danh sách chuẩn bị, chưa công khai!"
+            )
+
+    @staticmethod
+    def remove_jobs(name: str, context: ContextTypes.DEFAULT_TYPE):
+        jobs = context.job_queue.get_jobs_by_name(name=name)
+        for job in jobs:
+            job.schedule_removal()
+
+    @staticmethod
+    async def attempt_release_data(context: ContextTypes.DEFAULT_TYPE) -> None:
+        await context.bot.send_message(Config.default_chat_id, text=f"Beep!")
+        if TelegramCommandHandler.auto_reg_system.attempt_release_data():
+            TelegramCommandHandler.remove_jobs(name=Config.job_name_for_release, context=context)
+            await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
+                update=None,
                 context=context,
-                message="Đây là danh sách chuẩn bị, chưa công khai!"
+                message="Danh sách vừa được cập nhật!"
             )
 
     @staticmethod
     async def run_notitime(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        pass
+        message = TelegramCommandHandler.auto_reg_system.handle_notitime(
+            username=update.effective_user.username,
+            message=update.message.text,
+            time_manager=TelegramCommandHandler.time_manager,
+        )
+        await TelegramCommandHandler.reply_message(
+            update=update,
+            text=message
+        )
+        TelegramCommandHandler.remove_jobs(name=Config.job_name_for_release, context=context)
+        context.job_queue.run_repeating(
+            callback=TelegramCommandHandler.attempt_release_data,
+            interval=5,
+            name=Config.job_name_for_release,
+        )
 
     @staticmethod
     async def run_reset(update: Update, _):

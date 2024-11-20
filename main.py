@@ -32,6 +32,9 @@ app.add_handler(
     CommandHandler(command=TelegramCommandHandler.COMMAND_NEW, callback=TelegramCommandHandler.run_new)
 )
 app.add_handler(
+    CommandHandler(command=TelegramCommandHandler.COMMAND_NOTITIME, callback=TelegramCommandHandler.run_notitime)
+)
+app.add_handler(
     CommandHandler(command=TelegramCommandHandler.COMMAND_RESET, callback=TelegramCommandHandler.run_reset)
 )
 app.add_handler(
@@ -76,10 +79,8 @@ app.add_handler(
 app.add_handler(
     CommandHandler(command=TelegramCommandHandler.COMMAND_AKA, callback=TelegramCommandHandler.run_aka)
 )
-# command for notitime
 app.add_handler(
     MessageHandler(filters=filters.COMMAND, callback=TelegramCommandHandler.run_command_not_found)
 )
 app.add_handler(CallbackQueryHandler(TelegramCommandHandler.handle_buttons))
-
 app.run_polling()
