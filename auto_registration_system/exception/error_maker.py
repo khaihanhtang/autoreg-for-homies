@@ -59,3 +59,7 @@ class ErrorMaker:
     @staticmethod
     def make_message_containing_comma_exception(message: str) -> Exception:
         return Exception(f"'{message} không hợp lệ vì chứa dấu ','!")
+
+    @staticmethod
+    def make_release_time_invalid_exception() -> Exception:
+        return Exception(f"Thời gian công bố phải sau thời điểm hiện tại!")

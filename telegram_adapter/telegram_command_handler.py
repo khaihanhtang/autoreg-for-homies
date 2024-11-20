@@ -26,7 +26,11 @@ class TelegramCommandHandler:
     tracer: Tracer = Tracer(
         log_file_name=Config.log_file_name,
         history_file_name=Config.history_file_name,
-        time_manager=TimeManager(time_zone=Config.time_zone, time_format=Config.time_format)
+        time_manager=TimeManager(
+            time_zone=Config.time_zone,
+            input_time_format=Config.input_time_format,
+            output_time_format=Config.output_time_format
+        )
     )
 
     NUM_BUTTONS_PER_LINE = 3
@@ -56,6 +60,7 @@ class TelegramCommandHandler:
     COMMAND_HISTORY = "history"
     COMMAND_AKA = "aka"
     COMMAND_RESET = "reset"
+    COMMAND_NOTITIME = "notitime"
     CALLBACK_DATA_HELP = f"_{COMMAND_HELP}"
     CALLBACK_DATA_ALL = f"_{COMMAND_ALL}"
     CALLBACK_DATA_DRG = f"_{COMMAND_DRG}"
@@ -489,6 +494,10 @@ class TelegramCommandHandler:
                 context=context,
                 message="Đây là danh sách chuẩn bị, chưa công khai!"
             )
+
+    @staticmethod
+    async def run_notitime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        pass
 
     @staticmethod
     async def run_reset(update: Update, _):

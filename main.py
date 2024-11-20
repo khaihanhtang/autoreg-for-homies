@@ -76,6 +76,7 @@ app.add_handler(
 app.add_handler(
     CommandHandler(command=TelegramCommandHandler.COMMAND_AKA, callback=TelegramCommandHandler.run_aka)
 )
+# command for notitime
 app.add_handler(
     MessageHandler(filters=filters.COMMAND, callback=TelegramCommandHandler.run_command_not_found)
 )

@@ -18,7 +18,8 @@ from auto_registration_system.exception.exception_syntax_error import SyntaxErro
 from auto_registration_system.term import Term
 from string_parser.string_parser import StringParser
 from auto_registration_system.data_structure.identity_manager import IdentityManager
-
+from datetime import datetime
+from time_manager import TimeManager
 
 class AutoRegistrationSystem:
 
@@ -29,6 +30,7 @@ class AutoRegistrationSystem:
         self._chat_manager: ChatManager = ChatManager(chat_ids=chat_ids)
         self._lock_manager: LockManager = LockManager(locked=False)
         self._identity_manager: IdentityManager = IdentityManager(alias_file_name=alias_file_name)
+        self._notification_time = datetime or None
 
     @property
     def data(self) -> RegistrationData:
@@ -89,6 +91,17 @@ class AutoRegistrationSystem:
             return "Không có gì thay đổi", is_in_main_group
         except Exception as e:
             return repr(e), is_in_main_group
+
+    def handle_notitime(self, username: str, message: str) -> str:
+        try:
+            self._admin_manager.enforce_admin(username=username)
+            message = StringParser.remove_command(message=message)
+            self._notification_time = str_to_timestamp(
+                time_zone=TimeManager.time_zone,
+                datetime_str=message,
+            )
+        except Exception as e:
+            return repr(e)
 
     def get_all_slots_as_string(self, is_main_data: bool = True) -> str or None:
         return AutoRegistrationSystem.convert_registrations_to_string(
