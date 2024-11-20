@@ -372,9 +372,10 @@ class TelegramCommandHandler:
             update: Update,
             context: ContextTypes.DEFAULT_TYPE,
             message: str or None,
-            parse_mode: ParseMode or None = None
+            parse_mode: ParseMode or None = None,
+            is_main_data: bool = True,
     ):
-        all_slots_as_string = TelegramCommandHandler.auto_reg_system.get_all_slots_as_string()
+        all_slots_as_string = TelegramCommandHandler.auto_reg_system.get_all_slots_as_string(is_main_data=is_main_data)
 
         # sends all slots to chat
         new_chat_id = None
@@ -479,7 +480,8 @@ class TelegramCommandHandler:
         await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
             update=update,
             context=context,
-            message=message
+            message=message,
+            is_main_data=is_in_main_group
         )
         if not is_in_main_group:
             await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(

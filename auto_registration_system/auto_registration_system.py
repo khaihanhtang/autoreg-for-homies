@@ -24,7 +24,7 @@ class AutoRegistrationSystem:
 
     def __init__(self, admins: set[str], chat_ids: set[int], alias_file_name: str):
         self._data: RegistrationData or None = None
-        self._pre_release_data: RegistrationData or None = None
+        self._pre_released_data: RegistrationData or None = None
         self._admin_manager: AdminManager = AdminManager(admins=admins)
         self._chat_manager: ChatManager = ChatManager(chat_ids=chat_ids)
         self._lock_manager: LockManager = LockManager(locked=False)
@@ -39,7 +39,7 @@ class AutoRegistrationSystem:
         return self._identity_manager
 
     @staticmethod
-    def convert_registrations_to_string(data: RegistrationData) -> str or None:
+    def convert_registrations_to_string(data: RegistrationData or None) -> str or None:
         if data is None:
             return None
         res = ""
@@ -83,15 +83,17 @@ class AutoRegistrationSystem:
                 if chat_id in self._chat_manager.chat_ids:
                     self._data = temp_data
                 else:
-                    self._pre_release_data = temp_data
+                    self._pre_released_data = temp_data
                     is_in_main_group = False
                 return "Cài đặt thành công!", is_in_main_group
             return "Không có gì thay đổi", is_in_main_group
         except Exception as e:
             return repr(e), is_in_main_group
 
-    def get_all_slots_as_string(self) -> str or None:
-        return AutoRegistrationSystem.convert_registrations_to_string(data=self._data)
+    def get_all_slots_as_string(self, is_main_data: bool = True) -> str or None:
+        return AutoRegistrationSystem.convert_registrations_to_string(
+            data=self._data if is_main_data else self._pre_released_data
+        )
 
     def get_available_slots_as_string(self) -> str:
         res: str = AutoRegistrationSystem.convert_counts_from_available_slots_to_string(
