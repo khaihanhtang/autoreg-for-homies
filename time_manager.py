@@ -1,6 +1,5 @@
 from datetime import datetime
 from pytz.tzinfo import StaticTzInfo
-from auto_registration_system.exception.error_maker import ErrorMaker
 
 
 class TimeManager:
@@ -18,11 +17,23 @@ class TimeManager:
     def input_time_format(self) -> str:
         return self._input_time_format
 
-    def str_to_datetime(self, datetime_str: str) -> datetime:
-        return datetime.strptime(datetime_str, self._input_time_format).astimezone(tz=self._time_zone)
+    def str_to_datetime(self, datetime_str: str) -> datetime or None:
+        try:
+            return datetime.strptime(datetime_str, self._input_time_format).astimezone(tz=self._time_zone)
+        except Exception:
+            return None
 
-    def datetime_to_string(self, datetime_val: datetime) -> str:
-        return datetime_val.strftime(self._output_time_format)
+    def datetime_to_str(self, datetime_val: datetime) -> str or None:
+        try:
+            return datetime_val.strftime(self._output_time_format)
+        except Exception:
+            return None
+
+    def datetime_to_str_with_input_time_format(self, datetime_val: datetime) -> str or None:
+        try:
+            return datetime_val.strftime(self._input_time_format)
+        except Exception:
+            return None
 
     def now(self) -> datetime:
         return datetime.now(self._time_zone)

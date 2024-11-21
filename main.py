@@ -6,7 +6,10 @@ from telegram_adapter.telegram_command_handler import TelegramCommandHandler
 
 import logging
 
+TelegramCommandHandler.initialize()
+
 token: str = input("Enter bot token: ")
+print(f"Please remember to run command /{TelegramCommandHandler.COMMAND_START}")
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename=Config.log_file_name, encoding='utf-8', level=logging.INFO)
@@ -19,6 +22,9 @@ app = (
     .build()
 )
 
+app.add_handler(
+    CommandHandler(command=TelegramCommandHandler.COMMAND_START, callback=TelegramCommandHandler.run_start)
+)
 app.add_handler(
     CommandHandler(command=TelegramCommandHandler.COMMAND_HELLO, callback=TelegramCommandHandler.run_hello)
 )

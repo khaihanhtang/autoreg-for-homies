@@ -20,6 +20,7 @@ from string_parser.string_parser import StringParser
 from auto_registration_system.data_structure.identity_manager import IdentityManager
 from datetime import datetime
 from time_manager import TimeManager
+from data_handler.data_handler import DataHandler
 
 
 class AutoRegistrationSystem:
@@ -34,6 +35,10 @@ class AutoRegistrationSystem:
         def release_time(self) -> datetime or None:
             return self._release_time
 
+        @property
+        def enabled(self) -> bool:
+            return self._enabled
+
         # @property
         # def enabled(self) -> bool:
         #    return self._enabled
@@ -44,16 +49,24 @@ class AutoRegistrationSystem:
         def enable(self):
             self._enabled = True
 
-        def set_release_time(self, new_release_time: datetime):
-            if new_release_time <= self._time_manager.now():
-                raise ErrorMaker.make_release_time_invalid_exception()
+        @release_time.setter
+        def release_time(self, new_release_time: datetime):
             self._release_time = new_release_time
             self._enabled = True
+            if new_release_time <= self._time_manager.now():
+                self._enabled = False
+                raise ErrorMaker.make_release_time_invalid_exception()
 
         def is_releasable(self) -> bool:
             if self._enabled and self._release_time is not None and self._release_time <= self._time_manager.now():
                 return True
             return False
+
+        def release_time_to_str(self) -> str or None:
+            return self._time_manager.datetime_to_str(datetime_val=self.release_time)
+
+        def release_time_to_str_with_input_time_format(self) -> str or None:
+            return self._time_manager.datetime_to_str_with_input_time_format(datetime_val=self.release_time)
 
     def __init__(self, admins: set[str], chat_ids: set[int], alias_file_name: str, time_manager: TimeManager):
         self._data: RegistrationData or None = None
@@ -72,6 +85,10 @@ class AutoRegistrationSystem:
             self._release_time_manager.disable()
             return True
         return False
+
+    @property
+    def release_time_manager(self) -> ReleaseTimeManager:
+        return self._release_time_manager
 
     @property
     def data(self) -> RegistrationData:
@@ -113,13 +130,13 @@ class AutoRegistrationSystem:
         return "Đã xóa toàn bộ danh sách!"
 
     def handle_new(self, username: str, message: str, chat_id: int) -> (str, bool):
+        is_in_main_group = True
         try:
             self._admin_manager.enforce_admin(username=username)
         except Exception as e:
-            return repr(e)
+            return repr(e), is_in_main_group
 
         temp_data = RegistrationData()
-        is_in_main_group = True
         try:
             response = NewHandler.handle(message=message, data=temp_data)
             if response:
@@ -137,17 +154,18 @@ class AutoRegistrationSystem:
         try:
             self._admin_manager.enforce_admin(username=username)
             message = StringParser.remove_command(message=message)
-            self._release_time_manager.set_release_time(new_release_time=time_manager.str_to_datetime(message))
-            return f"Release time is set to be {time_manager.datetime_to_string(
+            self._release_time_manager.release_time = time_manager.str_to_datetime(message)
+            return f"Release time is set to be {time_manager.datetime_to_str(
                 self._release_time_manager.release_time
             )}"
         except Exception as e:
             return repr(e)
 
     def get_all_slots_as_string(self, is_main_data: bool = True) -> str or None:
-        return AutoRegistrationSystem.convert_registrations_to_string(
-            data=self._data if is_main_data else self._pre_released_data
-        )
+        data = self._data
+        if not is_main_data:
+            data = self._pre_released_data
+        return AutoRegistrationSystem.convert_registrations_to_string(data=data)
 
     def get_available_slots_as_string(self) -> str:
         res: str = AutoRegistrationSystem.convert_counts_from_available_slots_to_string(
@@ -156,6 +174,13 @@ class AutoRegistrationSystem:
         if res is None or len(res) == 0:
             return "Không còn slot trống!"
         return res
+
+    def write_all_data_to_files(self, data_handler: DataHandler):
+        data_handler.write_data_to_files(
+            main_list_as_str=self.get_all_slots_as_string(is_main_data=True),
+            release_time_as_str=self._release_time_manager.release_time_to_str_with_input_time_format(),
+            pre_released_list_as_str=self.get_all_slots_as_string(is_main_data=False)
+        )
 
     def handle_register(self, command_string_for_suggestion: str, username: str, message: str, chat_id: int) \
             -> (str, str or None):

@@ -9,6 +9,7 @@ from auto_registration_system.data_structure.registration_data import Registrati
 from time_manager import TimeManager
 from tracer import Tracer
 from string_parser.string_parser import StringParser
+from data_handler.data_handler import DataHandler
 
 import time
 
@@ -36,6 +37,61 @@ class TelegramCommandHandler:
         time_manager=time_manager
     )
 
+    data_handler: DataHandler = DataHandler(
+        directory_data=Config.directory_data,
+        file_main_list=Config.file_name_main_list,
+        file_release_time=Config.file_name_release_time,
+        file_pre_released_list=Config.file_name_pre_released_list
+    )
+
+    @staticmethod
+    def initialize():
+        try:
+            main_list_as_str, release_time_as_str, pre_released_list_str = (TelegramCommandHandler
+                                                                            .data_handler
+                                                                            .read_data_from_files()
+                                                                            )
+            print("Main List:")
+            print(main_list_as_str)
+            try:
+                TelegramCommandHandler.auto_reg_system.handle_new(
+                    username="*",  # special username for enforcing admin
+                    message=f"/{TelegramCommandHandler.COMMAND_NEW} {main_list_as_str}",
+                    chat_id=Config.default_chat_id
+                )
+                print("Main list is loaded successfully!")
+            except Exception:
+                print("Unable to load main list! Main list is reset to be empty!")
+
+            print("------------------------------------------")
+            print(f"Release time: {release_time_as_str}")
+            try:
+                message = TelegramCommandHandler.auto_reg_system.handle_notitime(
+                    username="*",  # special username for enforcing admin
+                    message=f"/{TelegramCommandHandler.COMMAND_NOTITIME} {release_time_as_str}",
+                    time_manager=TelegramCommandHandler.time_manager
+                )
+                print(f"{message}")
+            except Exception:
+                print("Unable to load release time! Release time is set to be None!")
+
+            print("------------------------------------------")
+            print("Pre-released list:")
+            print(pre_released_list_str)
+            try:
+                TelegramCommandHandler.auto_reg_system.handle_new(
+                    username="*",  # special username for enforcing admin
+                    message=f"/{TelegramCommandHandler.COMMAND_NEW} {pre_released_list_str}",
+                    chat_id=0,  # chat_id is set for making pre-released list
+                )
+                print(TelegramCommandHandler.auto_reg_system.get_all_slots_as_string(is_main_data=False))
+                print("Pre-released list is loaded successfully!")
+            except Exception:
+                print("Unable to load pre-released list! Pre-released list is reset to be empty!")
+        except Exception:
+            print("No data or error data in files!")
+
+
     NUM_BUTTONS_PER_LINE = 3
 
     last_chat_id = None
@@ -44,6 +100,7 @@ class TelegramCommandHandler:
     last_av_chat_id = None
     last_av_message_id = None
 
+    COMMAND_START = "start"
     COMMAND_HELLO = "hello"
     COMMAND_RETRIEVE = "retrieve"
     COMMAND_ALL = "all"
@@ -416,7 +473,7 @@ class TelegramCommandHandler:
             )
 
         # inform message
-        if message is not None:
+        if message is not None and is_main_data:
             await TelegramCommandHandler.reply_message(
                 update=update,
                 text=message,
@@ -440,6 +497,9 @@ class TelegramCommandHandler:
             TelegramCommandHandler.last_chat_id = new_chat_id
             TelegramCommandHandler.last_message_id = new_message_id
 
+        # write all data to file
+        TelegramCommandHandler.auto_reg_system.write_all_data_to_files(data_handler=TelegramCommandHandler.data_handler)
+
     @staticmethod
     def log_message_from_user(update: Update, is_history_required: bool = True):
         TelegramCommandHandler.tracer.log(
@@ -451,6 +511,15 @@ class TelegramCommandHandler:
     @staticmethod
     def log_message(message: str):
         TelegramCommandHandler.tracer.log(message=message)
+
+    @staticmethod
+    async def run_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        TelegramCommandHandler.log_message_from_user(update=update)
+        TelegramCommandHandler.run_job_for_release(context=context)
+        await TelegramCommandHandler.reply_message(
+            update=update,
+            text="Checked and started all potential jobs!"
+        )
 
     @staticmethod
     async def run_hello(update: Update, _):
@@ -514,8 +583,20 @@ class TelegramCommandHandler:
         if not is_in_main_group:
             await TelegramCommandHandler.reply_message(
                 update=update,
-                text="Đây là danh sách chuẩn bị, chưa công khai!"
+                text="This is pre-released list, not public yet!"
             )
+            if TelegramCommandHandler.auto_reg_system.release_time_manager.enabled:
+                await TelegramCommandHandler.reply_message(
+                    update=update,
+                    text=f"✅ The intended release time is {
+                        TelegramCommandHandler.auto_reg_system.release_time_manager.release_time_to_str()
+                    }"
+                )
+            else:
+                await TelegramCommandHandler.reply_message(
+                    update=update,
+                    text="❌ Please set up release time!"
+                )
 
     @staticmethod
     def remove_jobs(name: str, context: ContextTypes.DEFAULT_TYPE):
@@ -525,13 +606,23 @@ class TelegramCommandHandler:
 
     @staticmethod
     async def attempt_release_data(context: ContextTypes.DEFAULT_TYPE) -> None:
-        await context.bot.send_message(Config.default_chat_id, text=f"Beep!")
+        # print(f"Beep!")
         if TelegramCommandHandler.auto_reg_system.attempt_release_data():
             TelegramCommandHandler.remove_jobs(name=Config.job_name_for_release, context=context)
             await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
                 update=None,
                 context=context,
                 message="Danh sách vừa được cập nhật!"
+            )
+
+    @staticmethod
+    def run_job_for_release(context: ContextTypes.DEFAULT_TYPE):
+        TelegramCommandHandler.remove_jobs(name=Config.job_name_for_release, context=context)
+        if TelegramCommandHandler.auto_reg_system.release_time_manager.enabled:
+            context.job_queue.run_repeating(
+                callback=TelegramCommandHandler.attempt_release_data,
+                interval=Config.repeating_interval_for_release,
+                name=Config.job_name_for_release,
             )
 
     @staticmethod
@@ -545,12 +636,10 @@ class TelegramCommandHandler:
             update=update,
             text=message
         )
-        TelegramCommandHandler.remove_jobs(name=Config.job_name_for_release, context=context)
-        context.job_queue.run_repeating(
-            callback=TelegramCommandHandler.attempt_release_data,
-            interval=5,
-            name=Config.job_name_for_release,
-        )
+        TelegramCommandHandler.run_job_for_release(context=context)
+
+        # write all data to file
+        TelegramCommandHandler.auto_reg_system.write_all_data_to_files(data_handler=TelegramCommandHandler.data_handler)
 
     @staticmethod
     async def run_reset(update: Update, _):
