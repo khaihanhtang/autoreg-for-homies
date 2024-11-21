@@ -63,3 +63,7 @@ class ErrorMaker:
     @staticmethod
     def make_release_time_invalid_exception() -> Exception:
         return Exception(f"Thời gian công bố phải sau thời điểm hiện tại!")
+
+    @staticmethod
+    def make_time_list_invalid_exception() -> Exception:
+        return Exception(f"Time list must be strictly decreasing and has all positive integers!")

@@ -6,7 +6,7 @@ from telegram.ext import ContextTypes
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
 from auto_registration_system.command_handler.handler_dereg import DeregHandler
 from auto_registration_system.data_structure.registration_data import RegistrationData
-from time_manager import TimeManager
+from auto_registration_system.data_structure.time_manager import TimeManager
 from tracer import Tracer
 from string_parser.string_parser import StringParser
 from data_handler.data_handler import DataHandler
@@ -74,6 +74,8 @@ class TelegramCommandHandler:
                 print(f"{message}")
             except Exception:
                 print("Unable to load release time! Release time is set to be None!")
+
+            print(TelegramCommandHandler.auto_reg_system.release_time_manager.release_time)
 
             print("------------------------------------------")
             print("Pre-released list:")

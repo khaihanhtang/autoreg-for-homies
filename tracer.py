@@ -1,6 +1,6 @@
 import logging
 
-from time_manager import TimeManager
+from auto_registration_system.data_structure.time_manager import TimeManager
 
 
 class Tracer:

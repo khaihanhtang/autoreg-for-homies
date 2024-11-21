@@ -19,7 +19,7 @@ from auto_registration_system.term import Term
 from string_parser.string_parser import StringParser
 from auto_registration_system.data_structure.identity_manager import IdentityManager
 from datetime import datetime
-from time_manager import TimeManager
+from auto_registration_system.data_structure.time_manager import TimeManager
 from data_handler.data_handler import DataHandler
 
 
@@ -38,10 +38,6 @@ class AutoRegistrationSystem:
         @property
         def enabled(self) -> bool:
             return self._enabled
-
-        # @property
-        # def enabled(self) -> bool:
-        #    return self._enabled
 
         def disable(self):
             self._enabled = False
