@@ -2,7 +2,7 @@ from typing import BinaryIO
 
 from telegram import MessageEntity
 
-from auto_registration_system.command_handler.handle_aka import AkaHandler
+from auto_registration_system.command_handler.handler_aka import AkaHandler
 from auto_registration_system.data_structure.chat_manager import ChatManager
 from auto_registration_system.command_handler.handler_allplayable import AllplayableHandler
 from auto_registration_system.command_handler.handler_av import AvHandler
@@ -16,11 +16,13 @@ from auto_registration_system.command_handler.handler_new import NewHandler
 from auto_registration_system.exception.error_maker import ErrorMaker
 from auto_registration_system.exception.exception_syntax_error import SyntaxErrorException
 from auto_registration_system.term import Term
+from config import Config
 from string_parser.string_parser import StringParser
 from auto_registration_system.data_structure.identity_manager import IdentityManager
 from datetime import datetime
 from auto_registration_system.data_structure.time_manager import TimeManager
 from data_handler.data_handler import DataHandler
+from auto_registration_system.data_structure.reminder import Reminder
 
 
 class AutoRegistrationSystem:
@@ -49,7 +51,9 @@ class AutoRegistrationSystem:
         def release_time(self, new_release_time: datetime):
             self._release_time = new_release_time
             self._enabled = True
-            if new_release_time <= self._time_manager.now():
+            if new_release_time is None:
+                self._enabled = False
+            elif new_release_time <= self._time_manager.now():
                 self._enabled = False
                 raise ErrorMaker.make_release_time_invalid_exception()
 
@@ -73,6 +77,11 @@ class AutoRegistrationSystem:
         self._identity_manager: IdentityManager = IdentityManager(alias_file_name=alias_file_name)
         self._release_time_manager: AutoRegistrationSystem.ReleaseTimeManager \
             = AutoRegistrationSystem.ReleaseTimeManager(time_manager=time_manager)
+        self._reminder: Reminder = Reminder(
+            time_list=Config.reminder_time_list,
+            time_manager=time_manager,
+            release_time=self._release_time_manager.release_time
+        )
 
     def attempt_release_data(self) -> bool:
         if self._release_time_manager.is_releasable():
@@ -81,6 +90,12 @@ class AutoRegistrationSystem:
             self._release_time_manager.disable()
             return True
         return False
+
+    def update_reminder(self, time_manager: TimeManager) -> (bool, int):
+        return self._reminder.update_pointer(
+            time_manager=time_manager,
+            release_time=self._release_time_manager.release_time
+        )
 
     @property
     def release_time_manager(self) -> ReleaseTimeManager:
@@ -151,7 +166,12 @@ class AutoRegistrationSystem:
             self._admin_manager.enforce_admin(username=username)
             message = StringParser.remove_command(message=message)
             self._release_time_manager.release_time = time_manager.str_to_datetime(message)
-            return f"Release time is set to be {time_manager.datetime_to_str(
+            self._reminder = Reminder(
+                time_list=Config.reminder_time_list,
+                time_manager=time_manager,
+                release_time=self._release_time_manager.release_time
+            )
+            return f"✅ Release time is set to be {time_manager.datetime_to_str(
                 self._release_time_manager.release_time
             )}"
         except Exception as e:

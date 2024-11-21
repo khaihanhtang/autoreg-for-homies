@@ -466,7 +466,7 @@ class TelegramCommandHandler:
                 message=f"(from system) \n{all_slots_as_string}"
             )
         else:
-            to_be_sent_text = "Danh sách chơi trống!"
+            to_be_sent_text = "The list is empty!" if is_main_data else "The pre-released list is empty!"
             await TelegramCommandHandler.reply_message(
                 update=update, text=to_be_sent_text
             ) if update is not None else await context.bot.send_message(
@@ -520,7 +520,7 @@ class TelegramCommandHandler:
         TelegramCommandHandler.run_job_for_release(context=context)
         await TelegramCommandHandler.reply_message(
             update=update,
-            text="Checked and started all potential jobs!"
+            text="I (bot) checked and started all potential jobs!"
         )
 
     @staticmethod
@@ -531,11 +531,21 @@ class TelegramCommandHandler:
     @staticmethod
     async def run_retrieve(update: Update, context: ContextTypes.DEFAULT_TYPE):
         TelegramCommandHandler.log_message_from_user(update=update)
-        await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
-            update=update,
-            context=context,
-            message=None
-        )
+        chat_id = update.message.chat_id
+        if chat_id in Config.chat_ids:
+            await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
+                update=update,
+                context=context,
+                message=None,
+                is_main_data=True
+            )
+        else:
+            await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
+                update=update,
+                context=context,
+                message=None,
+                is_main_data=False
+            )
 
     @staticmethod
     async def run_av(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -609,6 +619,14 @@ class TelegramCommandHandler:
     @staticmethod
     async def attempt_release_data(context: ContextTypes.DEFAULT_TYPE) -> None:
         # print(f"Beep!")
+        is_reminder_updated, minutes_left = TelegramCommandHandler.auto_reg_system.update_reminder(
+            time_manager=TelegramCommandHandler.time_manager
+        )
+        if is_reminder_updated:
+            await context.bot.send_message(
+                chat_id=Config.default_chat_id,
+                text=f"The list will be released in {minutes_left} minute(s)"
+            )
         if TelegramCommandHandler.auto_reg_system.attempt_release_data():
             TelegramCommandHandler.remove_jobs(name=Config.job_name_for_release, context=context)
             await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(

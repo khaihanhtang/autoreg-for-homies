@@ -18,6 +18,7 @@ class Config:
     # variables for release time
     job_name_for_release: str = "release"  # used when creating job for the telegram bot to run before release
     repeating_interval_for_release: float = 3  # number of seconds after every 2 consecutive repeats
+    reminder_time_list: list[int] = [2, 1]
 
     # variable for data storage
     directory_data = "data"
