@@ -107,7 +107,7 @@ class AutoRegistrationSystem:
                 raise ErrorMaker.make_admin_permission_error_exception()
 
     def handle_new(self, username: str, message: str, chat_id: int) -> (str, bool):
-        is_in_main_group = True
+        is_in_main_group = ChatManager.is_chat_id_allowed(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids)
         try:
             self._admin_manager.enforce_admin(username=username)
         except Exception as e:
@@ -117,11 +117,10 @@ class AutoRegistrationSystem:
         try:
             response = NewHandler.handle(message=message, data=temp_data)
             if response:
-                if ChatManager.is_chat_id_allowed(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids):
+                if is_in_main_group:
                     self._data = temp_data
                 else:
                     self._pre_released_data = temp_data
-                    is_in_main_group = False
                 return "Set up successfully!", is_in_main_group
             return "Nothing has been changed", is_in_main_group
         except Exception as e:

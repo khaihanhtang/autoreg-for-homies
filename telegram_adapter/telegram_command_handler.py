@@ -542,7 +542,7 @@ class TelegramCommandHandler:
             )
 
         # inform message
-        if message is not None and is_main_data:
+        if message is not None:
             await TelegramCommandHandler.reply_message(
                 update=update,
                 text=message,

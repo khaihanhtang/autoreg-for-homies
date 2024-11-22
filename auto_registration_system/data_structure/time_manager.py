@@ -20,7 +20,7 @@ class TimeManager:
 
     def str_to_datetime(self, datetime_str: str) -> datetime or None:
         try:
-            return datetime.strptime(datetime_str, self._input_time_format).astimezone(tz=self._time_zone)
+            return self._time_zone.localize(datetime.strptime(datetime_str, self._input_time_format))
         except Exception:
             return None
 
