@@ -102,7 +102,6 @@ class AutoRegistrationSystem:
         try:
             ChatManager.enforce_chat_id(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids)
         except Exception as e:
-            logging.exception(e)
             try:
                 self._admin_manager.enforce_admin(username=username)
             except Exception:
@@ -129,7 +128,7 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e), is_in_main_group
 
-    def handle_notitime(self, username: str, message: str, time_manager: TimeManager) -> str:
+    def handle_notitime(self, username: str, message: str, time_manager: TimeManager) -> (bool, str):
         try:
             self._admin_manager.enforce_admin(username=username)
             message = StringParser.remove_command(message=message)
@@ -142,11 +141,13 @@ class AutoRegistrationSystem:
                 time_manager=time_manager,
                 release_time=self._release_time_manager.release_time
             )
-            return f"✅ Release time is set to be {time_manager.datetime_to_str(
+            if not self.release_time_manager.enabled:
+                return False, f"❌ Release time hasn't been set!"
+            return True, f"✅ Release time is set to be {time_manager.datetime_to_str(
                 self._release_time_manager.release_time
             )}"
         except Exception as e:
-            return repr(e)
+            return False, repr(e)
 
     def get_all_slots_as_string(self, is_main_data: bool = True) -> str or None:
         data = self._data

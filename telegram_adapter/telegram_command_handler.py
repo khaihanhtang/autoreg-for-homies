@@ -100,20 +100,18 @@ class TelegramCommandHandler:
                 )
                 print("Main list is loaded successfully!")
             except Exception as e:  # pylint: disable=broad-except
-                logging.exception(e)
                 print("Unable to load main list! Main list is reset to be empty!")
 
             print("------------------------------------------")
             print(f"Release time: {release_time_as_str}")
             try:
-                message = TelegramCommandHandler.auto_reg_system.handle_notitime(
+                is_release_time_set_successfully, message = TelegramCommandHandler.auto_reg_system.handle_notitime(
                     username="*",  # special username for enforcing admin
                     message=f"/{TelegramCommandHandler.COMMAND_NOTITIME} {release_time_as_str}",
                     time_manager=TelegramCommandHandler.time_manager
                 )
                 print(f"{message}")
             except Exception as e:
-                logging.exception(e)
                 print("Unable to load release time! Release time is set to be None!")
 
             print(TelegramCommandHandler.auto_reg_system.release_time_manager.release_time)
@@ -130,10 +128,8 @@ class TelegramCommandHandler:
                 print(TelegramCommandHandler.auto_reg_system.get_all_slots_as_string(is_main_data=False))
                 print("Pre-released list is loaded successfully!")
             except Exception as e:
-                logging.exception(e)
                 print("Unable to load pre-released list! Pre-released list is reset to be empty!")
         except Exception as e:
-            logging.exception(e)
             print("No data or error data in files!")
 
     @staticmethod
@@ -209,7 +205,7 @@ class TelegramCommandHandler:
         ])
         button_list.append([
             InlineKeyboardButton(
-                text="Hủy đăng kí",
+                text="Deregister",
                 callback_data=TelegramCommandHandler.CALLBACK_DATA_DRG
             )
         ])
@@ -364,7 +360,6 @@ class TelegramCommandHandler:
                 chat_id=from_chat_id
             )
         except Exception as e:
-            logging.exception(e)
             TelegramCommandHandler.log_message(message="Failed to delete previous message!")
 
     @staticmethod
@@ -470,7 +465,8 @@ class TelegramCommandHandler:
             new_chat_id = sent_message_info.chat_id
             new_message_id = sent_message_info.message_id
             TelegramCommandHandler.tracer.log(
-                message=f"(from system) \n{all_slots_as_string}"
+                message=f"(from system) \n{all_slots_as_string}",
+                is_history_required=is_main_data
             )
         else:
             to_be_sent_text = "The list is empty!" if is_main_data else "The pre-released list is empty!"
@@ -502,7 +498,6 @@ class TelegramCommandHandler:
                         chat_id=TelegramCommandHandler.last_chat_id
                     )
                 except Exception as e:
-                    logging.exception(e)
                     TelegramCommandHandler.log_message(message="Failed to delete previous message!")
             TelegramCommandHandler.last_chat_id = new_chat_id
             TelegramCommandHandler.last_message_id = new_message_id
@@ -537,7 +532,7 @@ class TelegramCommandHandler:
     @staticmethod
     async def run_hello(update: Update, _):
         TelegramCommandHandler.log_message_from_user(update=update)
-        await TelegramCommandHandler.reply_message(update=update, text=f'Chào {update.effective_user.first_name}')
+        await TelegramCommandHandler.reply_message(update=update, text=f'Hello {update.effective_user.first_name}')
 
     @staticmethod
     async def run_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -570,32 +565,37 @@ class TelegramCommandHandler:
     async def run_av(update: Update, context: ContextTypes.DEFAULT_TYPE):
         TelegramCommandHandler.log_message_from_user(update=update)
 
-        # send new message
-        sent_message_info = await TelegramCommandHandler.reply_message(
-            update=update,
-            text="Danh sách các slot còn thiếu người:\n\n" +
-                 TelegramCommandHandler.auto_reg_system.get_available_slots_as_string(),
-            reply_markup=TelegramCommandHandler.make_inline_buttons_for_registration(
-                data=TelegramCommandHandler.auto_reg_system.data)
-        )
-        new_av_chat_id = sent_message_info.chat_id
-        new_av_message_id = sent_message_info.message_id
+        if ChatManager.is_chat_id_allowed(chat_id=update.message.chat_id, allowed_chat_ids=Config.allowed_chat_ids):
+            # send new message
+            sent_message_info = await TelegramCommandHandler.reply_message(
+                update=update,
+                text="Danh sách các slot còn thiếu người:\n\n" +
+                     TelegramCommandHandler.auto_reg_system.get_available_slots_as_string(),
+                reply_markup=TelegramCommandHandler.make_inline_buttons_for_registration(
+                    data=TelegramCommandHandler.auto_reg_system.data)
+            )
+            new_av_chat_id = sent_message_info.chat_id
+            new_av_message_id = sent_message_info.message_id
 
-        # try delete previous message
-        if TelegramCommandHandler.last_av_chat_id is not None and TelegramCommandHandler.last_av_chat_id is not None:
-            try:
-                await context.bot.deleteMessage(
-                    message_id=TelegramCommandHandler.last_av_message_id,
-                    chat_id=TelegramCommandHandler.last_av_chat_id
-                )
-            except Exception as e:
-                logging.exception(e)
-                TelegramCommandHandler.log_message(message="Failed to delete message!")
+            # try delete previous message
+            if TelegramCommandHandler.last_av_chat_id is not None and TelegramCommandHandler.last_av_chat_id is not None:
+                try:
+                    await context.bot.deleteMessage(
+                        message_id=TelegramCommandHandler.last_av_message_id,
+                        chat_id=TelegramCommandHandler.last_av_chat_id
+                    )
+                except Exception as e:
+                    TelegramCommandHandler.log_message(message="Failed to delete message!")
 
-        # record id of current message
-        if new_av_chat_id is not None and new_av_message_id is not None:
-            TelegramCommandHandler.last_av_chat_id = new_av_chat_id
-            TelegramCommandHandler.last_av_message_id = new_av_message_id
+            # record id of current message
+            if new_av_chat_id is not None and new_av_message_id is not None:
+                TelegramCommandHandler.last_av_chat_id = new_av_chat_id
+                TelegramCommandHandler.last_av_message_id = new_av_message_id
+        else:
+            await TelegramCommandHandler.reply_message(
+                update=update,
+                text="This command is not allowed to be used here!"
+            )
 
     @staticmethod
     async def respond_release_time_status(update: Update):
@@ -658,7 +658,7 @@ class TelegramCommandHandler:
             await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
                 update=None,
                 context=context,
-                message="Danh sách vừa được cập nhật!"
+                message="The list is now released!"
             )
 
     @staticmethod
@@ -673,7 +673,7 @@ class TelegramCommandHandler:
 
     @staticmethod
     async def run_notitime(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        message = TelegramCommandHandler.auto_reg_system.handle_notitime(
+        is_release_time_set_successfully, message = TelegramCommandHandler.auto_reg_system.handle_notitime(
             username=update.effective_user.username,
             message=update.message.text,
             time_manager=TelegramCommandHandler.time_manager,
@@ -682,6 +682,13 @@ class TelegramCommandHandler:
             update=update,
             text=message
         )
+        chat_id = update.message.chat_id
+        if is_release_time_set_successfully:
+            if not ChatManager.is_chat_id_allowed(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids):
+                await context.bot.send_message(
+                    chat_id=Config.default_chat_id,
+                    text=message
+                )
         TelegramCommandHandler.run_job_for_release(context=context)
 
         # write all data to file
@@ -825,7 +832,6 @@ class TelegramCommandHandler:
             )
             await update.message.reply_document(document=file)
         except Exception as e:
-            logging.exception(e)
             await TelegramCommandHandler.reply_message(
                 update=update,
                 text="Không thể gửi file! Cần quyền admin hoặc kết nối gặp vấn đề!"

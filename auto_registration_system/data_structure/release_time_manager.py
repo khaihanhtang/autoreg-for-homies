@@ -24,13 +24,13 @@ class ReleaseTimeManager:
         self._enabled = True
 
     def set_release_time(self, new_release_time: datetime, time_manager: TimeManager):
-        self._release_time = new_release_time
         self._enabled = True
         if new_release_time is None:
             self._enabled = False
         elif new_release_time <= time_manager.now():
             self._enabled = False
             raise ErrorMaker.make_release_time_invalid_exception()
+        self._release_time = new_release_time
 
     def is_releasable(self, time_manager: TimeManager) -> bool:
         if self._enabled and self._release_time is not None and self._release_time <= time_manager.now():

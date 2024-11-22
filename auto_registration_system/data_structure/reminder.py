@@ -41,14 +41,17 @@ class Reminder:
         return res
 
     def update_pointer(self, time_manager: TimeManager, release_time: datetime) -> (bool, int):
-        minutes_left: float = Reminder.compute_minutes_left(
-            time_manager=time_manager,
-            release_time=release_time
-        )
         is_updated: bool = False
         to_be_reminded_minutes_left: int = -1
-        while self._pointer < len(self._time_list) and minutes_left < float(self._time_list[self._pointer]):
-            to_be_reminded_minutes_left = self._time_list[self._pointer]
-            self._pointer += 1
-            is_updated = True
+        try:
+            minutes_left: float = Reminder.compute_minutes_left(
+                time_manager=time_manager,
+                release_time=release_time
+            )
+            while self._pointer < len(self._time_list) and minutes_left < float(self._time_list[self._pointer]):
+                to_be_reminded_minutes_left = self._time_list[self._pointer]
+                self._pointer += 1
+                is_updated = True
+        except Exception:
+            pass
         return is_updated, to_be_reminded_minutes_left
