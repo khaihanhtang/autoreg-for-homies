@@ -240,11 +240,11 @@ class TelegramCommandHandler:
         ])
         button_list.append([
             InlineKeyboardButton(
-                text="Release time",
+                text="release time",
                 callback_data=TelegramCommandHandler.CALLBACK_DATA_RT
             ),
             InlineKeyboardButton(
-                text="Deregister",
+                text="deregister",
                 callback_data=TelegramCommandHandler.CALLBACK_DATA_DRG
             )
         ])
@@ -669,7 +669,7 @@ class TelegramCommandHandler:
             await TelegramCommandHandler.send_message(
                 context=context,
                 chat_id=chat_id,
-                text=f"✅ The new list will be release after {
+                text=f"✅ The new list will be released after {
                     TelegramCommandHandler.auto_reg_system.release_time_manager.release_time_to_str(
                         time_manager=TelegramCommandHandler.time_manager)
                 }"
