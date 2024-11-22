@@ -1,4 +1,5 @@
 from datetime import datetime
+import pytz
 from pytz.tzinfo import StaticTzInfo
 
 
@@ -25,7 +26,7 @@ class TimeManager:
 
     def datetime_to_str(self, datetime_val: datetime) -> str or None:
         try:
-            return datetime_val.strftime(self._output_time_format)
+            return f"{datetime_val.strftime(self._output_time_format)} {datetime_val.tzinfo}"
         except Exception:
             return None
 

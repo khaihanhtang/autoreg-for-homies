@@ -142,7 +142,7 @@ class AutoRegistrationSystem:
             )
             if not self.release_time_manager.enabled:
                 return False, f"❌ Release time hasn't been set!"
-            return True, f"✅ Release time is set to be {time_manager.datetime_to_str(
+            return True, f"✅ New list will be released after {time_manager.datetime_to_str(
                 self._release_time_manager.release_time
             )}"
         except Exception as e:

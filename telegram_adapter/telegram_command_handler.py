@@ -73,11 +73,13 @@ class TelegramCommandHandler:
     COMMAND_AKA = "aka"
     COMMAND_RESET = "reset"
     COMMAND_NOTITIME = "notitime"
+    COMMAND_RT = "rt"  # command functioning is not developed yet
     CALLBACK_DATA_HELP = f"_{COMMAND_HELP}"
     CALLBACK_DATA_ALL = f"_{COMMAND_ALL}"
     CALLBACK_DATA_DRG = f"_{COMMAND_DRG}"
     CALLBACK_DATA_AV = f"_{COMMAND_AV}"
     CALLBACK_DATA_RG = f"_{COMMAND_RG}"
+    CALLBACK_DATA_RT = f"_{COMMAND_RT}"
 
     SECOND_CLICK_TO_DEREGISTER = False
 
@@ -200,21 +202,22 @@ class TelegramCommandHandler:
         button_count = 0
         button_list = []
         current_line_button_list = None
-        for date_venue in data.bookings_by_date_venue:
-            for slot_label in data.bookings_by_date_venue[date_venue]:
-                button = InlineKeyboardButton(
-                    text=f"slot {slot_label}",
-                    callback_data=TelegramCommandHandler.make_callback_data_for_rg(slot_label=slot_label)
-                )
-                if button_count % TelegramCommandHandler.NUM_BUTTONS_PER_LINE == 0:
-                    if current_line_button_list is not None:
-                        button_list.append(current_line_button_list)
-                    current_line_button_list = [button]
-                else:
-                    current_line_button_list.append(button)
-                button_count += 1
-        if current_line_button_list is not None:
-            button_list.append(current_line_button_list)
+        if data is not None:
+            for date_venue in data.bookings_by_date_venue:
+                for slot_label in data.bookings_by_date_venue[date_venue]:
+                    button = InlineKeyboardButton(
+                        text=f"slot {slot_label}",
+                        callback_data=TelegramCommandHandler.make_callback_data_for_rg(slot_label=slot_label)
+                    )
+                    if button_count % TelegramCommandHandler.NUM_BUTTONS_PER_LINE == 0:
+                        if current_line_button_list is not None:
+                            button_list.append(current_line_button_list)
+                        current_line_button_list = [button]
+                    else:
+                        current_line_button_list.append(button)
+                    button_count += 1
+            if current_line_button_list is not None:
+                button_list.append(current_line_button_list)
 
         # add buttons all and help
         button_list.append([
@@ -236,6 +239,10 @@ class TelegramCommandHandler:
             ),
         ])
         button_list.append([
+            InlineKeyboardButton(
+                text="Release time",
+                callback_data=TelegramCommandHandler.CALLBACK_DATA_RT
+            ),
             InlineKeyboardButton(
                 text="Deregister",
                 callback_data=TelegramCommandHandler.CALLBACK_DATA_DRG
@@ -276,6 +283,10 @@ class TelegramCommandHandler:
         if first_word == TelegramCommandHandler.CALLBACK_DATA_RG:
             return True
         return False
+
+    @staticmethod
+    def is_callback_data_rt(query_data: str) -> bool:
+        return query_data == TelegramCommandHandler.CALLBACK_DATA_RT
 
     @staticmethod
     def is_callback_data_drg_initial(query_data: str) -> bool:
@@ -334,7 +345,8 @@ class TelegramCommandHandler:
                          + f"\\(with name/alias {StringParser
                          .replace_escape_characters_for_markdown(alias_or_full_name)}\\) to deregister\\!")
 
-        await context.bot.send_message(
+        await TelegramCommandHandler.send_message(
+            context=context,
             chat_id=query.message.chat.id,
             text=response,
             parse_mode=ParseMode.MARKDOWN_V2,
@@ -359,7 +371,8 @@ class TelegramCommandHandler:
         callback_data = StringParser.remove_first_word(message=query_data)
         enforced_telegram_id = int(StringParser.get_first_word(message=callback_data))
         if enforced_telegram_id != sender.id:
-            await context.bot.send_message(
+            await TelegramCommandHandler.send_message(
+                context=context,
                 chat_id=from_chat_id,
                 text=f"{clickable_link_for_sender_telegram_id} "
                      + "is not allowed for deregistering other members by this way\\!",
@@ -368,7 +381,8 @@ class TelegramCommandHandler:
             return
         slot_label = StringParser.remove_first_word(message=callback_data)
         message = f"/{TelegramCommandHandler.COMMAND_DRG} {id_string} {slot_label}"
-        res = await context.bot.send_message(
+        res = await TelegramCommandHandler.send_message(
+            context=context,
             chat_id=from_chat_id,
             text=f"{StringParser.replace_escape_characters_for_markdown(message=message)}\t{identity_message}",
             parse_mode=ParseMode.MARKDOWN_V2
@@ -408,7 +422,8 @@ class TelegramCommandHandler:
 
         # handle special case for all and help
         if query.data == TelegramCommandHandler.CALLBACK_DATA_ALL:
-            res = await context.bot.send_message(
+            res = await TelegramCommandHandler.send_message(
+                context=context,
                 chat_id=query.message.chat.id,
                 text=f"/{TelegramCommandHandler.COMMAND_ALL}\t{identity_message}",
                 parse_mode=ParseMode.MARKDOWN_V2
@@ -416,7 +431,8 @@ class TelegramCommandHandler:
             await TelegramCommandHandler.run_all(update=Update(update_id=res.id, message=res), context=context)
             return
         elif query.data == TelegramCommandHandler.CALLBACK_DATA_HELP:
-            res = await context.bot.send_message(
+            res = await TelegramCommandHandler.send_message(
+                context=context,
                 chat_id=query.message.chat.id,
                 text=f"/{TelegramCommandHandler.COMMAND_HELP}\t{identity_message}",
                 parse_mode=ParseMode.MARKDOWN_V2
@@ -424,7 +440,8 @@ class TelegramCommandHandler:
             await TelegramCommandHandler.run_help(update=Update(update_id=res.id, message=res), _=None)
             return
         elif query.data == TelegramCommandHandler.CALLBACK_DATA_AV:
-            res = await context.bot.send_message(
+            res = await TelegramCommandHandler.send_message(
+                context=context,
                 chat_id=query.message.chat.id,
                 text=f"/{TelegramCommandHandler.COMMAND_AV}\t{identity_message}",
                 parse_mode=ParseMode.MARKDOWN_V2
@@ -434,7 +451,8 @@ class TelegramCommandHandler:
         elif TelegramCommandHandler.is_callback_data_rg(query_data=query.data):
             slot_label = StringParser.get_last_word(message=query.data)
             message = f"/{TelegramCommandHandler.COMMAND_RG} {id_string} {slot_label}"
-            res = await context.bot.send_message(
+            res = await TelegramCommandHandler.send_message(
+                context=context,
                 chat_id=query.message.chat.id,
                 text=f"{StringParser.replace_escape_characters_for_markdown(message=message)}\t{identity_message}",
                 parse_mode=ParseMode.MARKDOWN_V2
@@ -452,6 +470,15 @@ class TelegramCommandHandler:
                 context=context,
                 effective_user=query.from_user.username
             )
+            return
+        elif TelegramCommandHandler.is_callback_data_rt(query_data=query.data):
+            await TelegramCommandHandler.send_message(
+                context=context,
+                chat_id=query.message.chat.id,
+                text=f"/{TelegramCommandHandler.COMMAND_RT}\t{identity_message}",
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
+            await TelegramCommandHandler.send_release_time_status(context=context, chat_id=query.message.chat.id)
             return
         elif TelegramCommandHandler.is_callback_data_drg_initial(query_data=query.data):
             await TelegramCommandHandler.run_button_drg_initially(query=query, context=context)
@@ -481,15 +508,16 @@ class TelegramCommandHandler:
         # sends all slots to chat
         new_chat_id = None
         new_message_id = None
+        inline_buttons: InlineKeyboardMarkup = TelegramCommandHandler.make_inline_buttons_for_registration(
+            data=TelegramCommandHandler.auto_reg_system.data
+        ) if is_main_data else None
         if all_slots_as_string is not None:
-            inline_buttons: InlineKeyboardMarkup = TelegramCommandHandler.make_inline_buttons_for_registration(
-                data=TelegramCommandHandler.auto_reg_system.data
-            ) if is_main_data else None
             sent_message_info = await TelegramCommandHandler.reply_message(
                 update=update,
                 text=all_slots_as_string,
                 reply_markup=inline_buttons
-            ) if update is not None else await context.bot.send_message(
+            ) if update is not None else await TelegramCommandHandler.send_message(
+                context=context,
                 chat_id=Config.default_chat_id,
                 text=all_slots_as_string,
                 reply_markup=inline_buttons
@@ -503,10 +531,14 @@ class TelegramCommandHandler:
         else:
             to_be_sent_text = "The list is empty!" if is_main_data else "The pre-released list is empty!"
             await TelegramCommandHandler.reply_message(
-                update=update, text=to_be_sent_text
-            ) if update is not None else await context.bot.send_message(
+                update=update,
+                text=to_be_sent_text,
+                reply_markup=inline_buttons
+            ) if update is not None else await TelegramCommandHandler.send_message(
+                context=context,
                 chat_id=Config.default_chat_id,
-                text=to_be_sent_text
+                text=to_be_sent_text,
+                reply_markup=inline_buttons
             )
 
         # inform message
@@ -515,7 +547,8 @@ class TelegramCommandHandler:
                 update=update,
                 text=message,
                 parse_mode=parse_mode
-            ) if update is not None else await context.bot.send_message(
+            ) if update is not None else await TelegramCommandHandler.send_message(
+                context=context,
                 chat_id=Config.default_chat_id,
                 text=message,
                 parse_mode=parse_mode
@@ -586,7 +619,7 @@ class TelegramCommandHandler:
                     message=None,
                     is_main_data=False
                 )
-                await TelegramCommandHandler.respond_release_time_status(update=update)
+                await TelegramCommandHandler.send_release_time_status(context=context, chat_id=update.message.chat_id)
         except Exception as e:
             await TelegramCommandHandler.reply_message(
                 update=update,
@@ -631,19 +664,21 @@ class TelegramCommandHandler:
             )
 
     @staticmethod
-    async def respond_release_time_status(update: Update):
+    async def send_release_time_status(context: ContextTypes.DEFAULT_TYPE, chat_id: int):
         if TelegramCommandHandler.auto_reg_system.release_time_manager.enabled:
-            await TelegramCommandHandler.reply_message(
-                update=update,
-                text=f"✅ The intended release time is {
+            await TelegramCommandHandler.send_message(
+                context=context,
+                chat_id=chat_id,
+                text=f"✅ The new list will be release after {
                     TelegramCommandHandler.auto_reg_system.release_time_manager.release_time_to_str(
                         time_manager=TelegramCommandHandler.time_manager)
                 }"
             )
         else:
-            await TelegramCommandHandler.reply_message(
-                update=update,
-                text="❌ Please set up release time!"
+            await TelegramCommandHandler.send_message(
+                context=context,
+                chat_id=chat_id,
+                text="❌ Release time for new list has not been set!"
             )
 
     @staticmethod
@@ -665,7 +700,7 @@ class TelegramCommandHandler:
                 update=update,
                 text="This is pre-released list, not public yet!"
             )
-            await TelegramCommandHandler.respond_release_time_status(update=update)
+            await TelegramCommandHandler.send_release_time_status(context=context, chat_id=update.message.chat_id)
 
     @staticmethod
     def remove_jobs(name: str, context: ContextTypes.DEFAULT_TYPE):
@@ -680,7 +715,8 @@ class TelegramCommandHandler:
             time_manager=TelegramCommandHandler.time_manager
         )
         if is_reminder_updated:
-            await context.bot.send_message(
+            await TelegramCommandHandler.send_message(
+                context=context,
                 chat_id=Config.default_chat_id,
                 text=f"The list will be released in {minutes_left} minute(s)"
             )
@@ -718,7 +754,8 @@ class TelegramCommandHandler:
         chat_id = update.message.chat_id
         if is_release_time_set_successfully:
             if not ChatManager.is_chat_id_allowed(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids):
-                await context.bot.send_message(
+                await TelegramCommandHandler.send_message(
+                    context=context,
                     chat_id=Config.default_chat_id,
                     text=message
                 )
