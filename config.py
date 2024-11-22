@@ -9,7 +9,7 @@ class Config:
     allowed_chat_ids: set[int] = {-4273658267}  # test
     default_chat_id = -4273658267  # test
     log_file_name: str = "activities.log"
-    history_file_name: str = "history.md"
+    history_file_name: str = "history.txt"
     alias_file_name: str = "alias.json"
     time_zone: StaticTzInfo = pytz.timezone("Asia/Singapore")
     input_time_format: str = "%H:%M:%S %d/%m/%Y"
@@ -21,7 +21,7 @@ class Config:
     reminder_time_list: list[int] = [2, 1]
 
     # variable for data storage
-    directory_data : str= "data"
+    directory_data: str = "data"
     file_name_main_list: str = "main_list.txt"
     file_name_release_time: str = "release_time.txt"
     file_name_pre_released_list: str = "pre_released_list.txt"

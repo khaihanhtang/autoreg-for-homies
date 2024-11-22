@@ -39,7 +39,7 @@ class SlotManager:
         for i, reservation in enumerate(self._reservations):
             if reservation is not None and reservation.is_playable:
                 return self._reservations.pop(i)
-        raise ErrorMaker.make_playable_player_not_found_exception()
+        raise ErrorMaker.make_pending_player_not_found_exception()
 
     def move_all_playable_players(self):
         while len(self._players) < self._max_num_players:

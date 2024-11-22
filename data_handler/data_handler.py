@@ -41,9 +41,9 @@ class DataHandler:
                 text_file.write("")
 
     def read_data_from_files(self) -> (str, str, str):
-        main_list_as_str: str or None = None
-        release_time_as_str: str or None = None
-        pre_released_list_as_str: str or None = None
+        main_list_as_str: str | None = None
+        release_time_as_str: str | None = None
+        pre_released_list_as_str: str | None = None
         try:
             with open(file=self._file_main_list, mode="r", encoding="utf-8") as text_file:
                 main_list_as_str: str = text_file.read()

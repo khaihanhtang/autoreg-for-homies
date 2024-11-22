@@ -22,19 +22,19 @@ class DeregHandler:
         count_processed: int = 0
         slot: SlotManager = data.get_slot(slot_label=slot_label)
         if slot is None:
-            return f"Không tìm thấy slot {slot_label}\\!"
+            return f"Cannot find slot {slot_label}\\!"
         for name in players:
             if len(name) > 0:
                 count_processed += 1
                 try:
                     index = int(name) - 1
                     if index < 0 or index >= slot.max_num_players:
-                        response += f"Vị trí {index + 1} không phù hợp\\!\n"
+                        response += f"Position {index + 1} is not valid\\!\n"
                     elif index >= len(slot.players) or slot.players[index] == "":
-                        response += f"Vị trí {index + 1} đã bị xóa hoặc không tồn tại\\!\n"
+                        response += f"Position {index + 1} has been removed or does not exist\\!\n"
                     else:
-                        response += (f"{slot.players[index]} \\(từ vị trí {index + 1}\\) "
-                                     + f"vừa được xóa khỏi slot {slot_label}\\!\n")
+                        response += (f"{slot.players[index]} \\(from position {index + 1}\\) "
+                                     + f"has been removed from slot {slot_label}\\!\n")
                         slot.players[index] = ""
                 except ValueError:
                     found: bool = False
@@ -50,9 +50,13 @@ class DeregHandler:
                                 found = True
                                 break
                     if found:
-                        response += f"{StringParser.replace_escape_characters_for_markdown(name)} vừa được xóa khỏi slot {slot_label}\\!\n"
+                        response += f"{
+                            StringParser.replace_escape_characters_for_markdown(name)
+                        } has been removed from slot {slot_label}\\!\n"
                     else:
-                        response += f"{StringParser.replace_escape_characters_for_markdown(name)} không tồn tại trong slot {slot_label}\\!\n"
+                        response += f"{
+                            StringParser.replace_escape_characters_for_markdown(name)
+                        } does not exist in slot {slot_label}\\!\n"
         # clean empty elements
         new_players: list[str] = list()
         new_reservations: list[Reservation] = list()
@@ -66,7 +70,7 @@ class DeregHandler:
         slot.reservations = new_reservations
         slot.move_all_playable_players()
         if count_processed == 0:
-            return "Không có gì thay đổi\\!"
+            return "There is nothing changed\\!"
 
         data.move_all_playable_players()
 
@@ -86,7 +90,7 @@ class DeregHandler:
             count += 1
         if len(res) == 0:
             return None
-        return f"Bạn có thể thử một những lệnh sau \\(bấm để sao chép\\):\n{res}"
+        return f"You can try the following commands \\(hold to copy\\):\n{res}"
 
     @staticmethod
     def search_for_slots_able_to_be_deregistered(id_string: str, data: RegistrationData) -> list[(str, SlotManager)]:

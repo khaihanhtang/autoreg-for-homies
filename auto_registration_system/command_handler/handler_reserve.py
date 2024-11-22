@@ -24,11 +24,11 @@ class ReserveHandler:
                 try:
                     StringParser.enforce_message_containing_alpha(message=name)
                     data.reserve_player(slot_label=slot_label, player=name)
-                    response += f"{name} vừa được thêm vào dự bị slot {slot_label}.\n"
+                    response += f"{name} has been inserted into reserve list of slot {slot_label}.\n"
                 except Exception as e:
                     response += f"{repr(e)}\n"
         if count_processed == 0:
-            return "Không có gì thay đổi!"
+            return "There is nothing changed!"
 
         data.move_all_playable_players()
 

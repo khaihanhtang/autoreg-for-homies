@@ -26,14 +26,14 @@ class RegHandler:
                 try:
                     StringParser.enforce_message_containing_alpha(message=name)
                     data.register_player(slot_label=slot_label, player=name)
-                    response += f"{name} vừa được thêm vào slot {slot_label}\n"
+                    response += f"{name} has been inserted into slot {slot_label}\n"
                 except NameConflictException as e:
                     response += f"{repr(e)}\n"
                     conflict_names.append(name)
                 except Exception as e:
                     response += f"{repr(e)}\n"
         if count_processed == 0:
-            return "Không có gì thay đổi!", None, slot_label
+            return "There is nothing changed!", None, slot_label
 
         data.move_all_playable_players()
 
@@ -46,6 +46,8 @@ class RegHandler:
         count = 0
         res: str = ""
         for name in id_strings:
-            res += f"{count + 1}\\. `/{command_string} {StringParser.replace_escape_characters_for_markdown(message=name)} {slot_label}\n`"
+            res += f"{count + 1}\\. `/{command_string} {
+                StringParser.replace_escape_characters_for_markdown(message=name)
+            } {slot_label}\n`"
             count += 1
-        return f"Nếu muốn hủy đăng kí, bạn có thể thử bằng cách bấm để sao chép:\n{res}"
+        return f"If you want to deregister, you can hold to copy:\n{res}"

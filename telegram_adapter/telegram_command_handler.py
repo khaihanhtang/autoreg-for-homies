@@ -1,5 +1,3 @@
-import logging
-
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, \
     ReplyKeyboardRemove, ForceReply, User, Message, CallbackQuery
 from telegram.constants import MessageEntityType, ParseMode
@@ -99,7 +97,7 @@ class TelegramCommandHandler:
                     chat_id=Config.default_chat_id
                 )
                 print("Main list is loaded successfully!")
-            except Exception as e:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 print("Unable to load main list! Main list is reset to be empty!")
 
             print("------------------------------------------")
@@ -111,7 +109,7 @@ class TelegramCommandHandler:
                     time_manager=TelegramCommandHandler.time_manager
                 )
                 print(f"{message}")
-            except Exception as e:
+            except Exception:
                 print("Unable to load release time! Release time is set to be None!")
 
             print(TelegramCommandHandler.auto_reg_system.release_time_manager.release_time)
@@ -127,9 +125,9 @@ class TelegramCommandHandler:
                 )
                 print(TelegramCommandHandler.auto_reg_system.get_all_slots_as_string(is_main_data=False))
                 print("Pre-released list is loaded successfully!")
-            except Exception as e:
+            except Exception:
                 print("Unable to load pre-released list! Pre-released list is reset to be empty!")
-        except Exception as e:
+        except Exception:
             print("No data or error data in files!")
 
     @staticmethod
@@ -141,16 +139,50 @@ class TelegramCommandHandler:
     ):
         try:
             if len(text.strip()) == 0:
-                text = "Có lỗi xảy ra! Tin nhắn được gửi rỗng!"
+                text = "Error! Message to be sent is empty!"
             return await update.message.reply_text(text=text, parse_mode=parse_mode, reply_markup=reply_markup)
         except Exception as e:
             TelegramCommandHandler.tracer.log(
                 message=f"(from system) We caught an error when replying message: {repr(e)}"
             )
             time.sleep(10)
-            await TelegramCommandHandler.reply_message(update=update, text="Vừa có lỗi kết nối! Đang thử lại!")
+            await TelegramCommandHandler.reply_message(update=update, text="Connection error! I (bot) am trying again!")
             return await TelegramCommandHandler.reply_message(
                 update=update,
+                text=text,
+                reply_markup=reply_markup
+            )
+
+    @staticmethod
+    async def send_message(
+            context: ContextTypes.DEFAULT_TYPE,
+            chat_id: int,
+            text: str,
+            parse_mode: ParseMode or None = None,
+            reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply | None = None,
+    ):
+        try:
+            if len(text.strip()) == 0:
+                text = "Error! Message to be sent is empty!"
+            return await context.bot.send_message(
+                chat_id=chat_id,
+                text=text,
+                parse_mode=parse_mode,
+                reply_markup=reply_markup
+            )
+        except Exception as e:
+            TelegramCommandHandler.tracer.log(
+                message=f"(from system) We caught an error when replying message: {repr(e)}"
+            )
+            time.sleep(10)
+            await TelegramCommandHandler.send_message(
+                context=context,
+                chat_id=chat_id,
+                text="Connection error! I (bot) am trying again!"
+            )
+            return await TelegramCommandHandler.send_message(
+                context=context,
+                chat_id=chat_id,
                 text=text,
                 reply_markup=reply_markup
             )
@@ -274,8 +306,8 @@ class TelegramCommandHandler:
             full_name=StringParser.process_telegram_full_name(telegram_full_name=query.from_user.full_name)
         )
         if len(slots_able_to_be_deregistered) > 0:
-            response += (f"Những slot có thể hủy đăng kí cho {clickable_link_for_telegram_id} "
-                         + f"với tên/alias {StringParser.replace_escape_characters_for_markdown(alias_or_full_name)}")
+            response += (f"The following slots can be deregistered for {clickable_link_for_telegram_id} "
+                         + f"with name/alias {StringParser.replace_escape_characters_for_markdown(alias_or_full_name)}")
             button_list = []
             current_line_button_list = None
             button_count = 0
@@ -298,9 +330,9 @@ class TelegramCommandHandler:
                 button_list.append(current_line_button_list)
             inline_button_list = InlineKeyboardMarkup(inline_keyboard=button_list)
         else:
-            response += (f"Không có slot nào cho {clickable_link_for_telegram_id} "
-                         + f"\\(với tên/alias {StringParser
-                         .replace_escape_characters_for_markdown(alias_or_full_name)}\\) để hủy đăng kí\\!")
+            response += (f"There is no slot for {clickable_link_for_telegram_id} "
+                         + f"\\(with name/alias {StringParser
+                         .replace_escape_characters_for_markdown(alias_or_full_name)}\\) to deregister\\!")
 
         await context.bot.send_message(
             chat_id=query.message.chat.id,
@@ -330,7 +362,7 @@ class TelegramCommandHandler:
             await context.bot.send_message(
                 chat_id=from_chat_id,
                 text=f"{clickable_link_for_sender_telegram_id} "
-                     + "không được phép hủy đăng kí giúp thành viên khác bằng cách này\\!",
+                     + "is not allowed for deregistering other members by this way\\!",
                 parse_mode=ParseMode.MARKDOWN_V2
             )
             return
@@ -359,7 +391,7 @@ class TelegramCommandHandler:
                 message_id=from_message_id,
                 chat_id=from_chat_id
             )
-        except Exception as e:
+        except Exception:
             TelegramCommandHandler.log_message(message="Failed to delete previous message!")
 
     @staticmethod
@@ -497,7 +529,7 @@ class TelegramCommandHandler:
                         message_id=TelegramCommandHandler.last_message_id,
                         chat_id=TelegramCommandHandler.last_chat_id
                     )
-                except Exception as e:
+                except Exception:
                     TelegramCommandHandler.log_message(message="Failed to delete previous message!")
             TelegramCommandHandler.last_chat_id = new_chat_id
             TelegramCommandHandler.last_message_id = new_message_id
@@ -569,7 +601,7 @@ class TelegramCommandHandler:
             # send new message
             sent_message_info = await TelegramCommandHandler.reply_message(
                 update=update,
-                text="Danh sách các slot còn thiếu người:\n\n" +
+                text="The list of available slots:\n\n" +
                      TelegramCommandHandler.auto_reg_system.get_available_slots_as_string(),
                 reply_markup=TelegramCommandHandler.make_inline_buttons_for_registration(
                     data=TelegramCommandHandler.auto_reg_system.data)
@@ -578,13 +610,14 @@ class TelegramCommandHandler:
             new_av_message_id = sent_message_info.message_id
 
             # try delete previous message
-            if TelegramCommandHandler.last_av_chat_id is not None and TelegramCommandHandler.last_av_chat_id is not None:
+            if (TelegramCommandHandler.last_av_chat_id is not None
+                    and TelegramCommandHandler.last_av_chat_id is not None):
                 try:
                     await context.bot.deleteMessage(
                         message_id=TelegramCommandHandler.last_av_message_id,
                         chat_id=TelegramCommandHandler.last_av_chat_id
                     )
-                except Exception as e:
+                except Exception:
                     TelegramCommandHandler.log_message(message="Failed to delete message!")
 
             # record id of current message
@@ -788,7 +821,7 @@ class TelegramCommandHandler:
     async def run_command_not_found(update: Update, _):
         TelegramCommandHandler.log_message_from_user(update=update)
 
-        await TelegramCommandHandler.reply_message(update=update, text="Sai lệnh!")
+        await TelegramCommandHandler.reply_message(update=update, text="In correct command!")
 
     @staticmethod
     async def run_allplayable(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -831,10 +864,10 @@ class TelegramCommandHandler:
                 history_file_name=Config.history_file_name
             )
             await update.message.reply_document(document=file)
-        except Exception as e:
+        except Exception:
             await TelegramCommandHandler.reply_message(
                 update=update,
-                text="Không thể gửi file! Cần quyền admin hoặc kết nối gặp vấn đề!"
+                text="Cannot send file! Admin permission required or connection error"
             )
 
     @staticmethod
@@ -848,7 +881,6 @@ class TelegramCommandHandler:
                     telegram_full_name=update.effective_user.full_name
                 ),
                 message=update.message.text,
-                command_string=TelegramCommandHandler.COMMAND_AKA,
                 message_entities=update.message.parse_entities(
                     types=[MessageEntityType.MENTION, MessageEntityType.TEXT_MENTION]
                 )
@@ -864,19 +896,19 @@ class TelegramCommandHandler:
     async def run_help(update: Update, _):
         TelegramCommandHandler.log_message_from_user(update=update)
 
-        response: str = "Sử dụng những cú pháp sau:\n"
-        response += f"/{TelegramCommandHandler.COMMAND_REG} [tên 1], ..., [tên n] [slot]\t(đăng kí)\n"
-        response += f"/{TelegramCommandHandler.COMMAND_DEREG} [tên 1], ..., [tên n] [slot]\t(hủy đăng kí)\n"
-        response += f"/{TelegramCommandHandler.COMMAND_RESERVE} [tên 1], ..., [tên n] [slot]\t(dự bị)\n"
-        response += f"/{TelegramCommandHandler.COMMAND_ALL}\t(hiện đầy đủ danh sách)\n"
-        response += f"/{TelegramCommandHandler.COMMAND_AV}\t(hiện các slot còn thiếu người)\n"
-        response += f"/{TelegramCommandHandler.COMMAND_AKA} [alias]\t(người dùng tự cài đặt alias)\n"
-        response += f"/{TelegramCommandHandler.COMMAND_AKA}\t(người dùng xem alias của chính mình)\n"
+        response: str = "You the following syntaxes:\n"
+        response += f"/{TelegramCommandHandler.COMMAND_REG} [name 1], ..., [name n] [slot]\t(register)\n"
+        response += f"/{TelegramCommandHandler.COMMAND_DEREG} [name 1], ..., [name n] [slot]\t(deregister)\n"
+        response += f"/{TelegramCommandHandler.COMMAND_RESERVE} [name 1], ..., [name n] [slot]\t(reserve)\n"
+        response += f"/{TelegramCommandHandler.COMMAND_ALL}\t(show entire list)\n"
+        response += f"/{TelegramCommandHandler.COMMAND_AV}\t(show available slots)\n"
+        response += f"/{TelegramCommandHandler.COMMAND_AKA} [alias]\t(set alias)\n"
+        response += f"/{TelegramCommandHandler.COMMAND_AKA}\t(view your alias)\n"
         response += f"\n"
-        response += f"Các lệnh rút ngắn:\n"
-        response += f"/{TelegramCommandHandler.COMMAND_RG}\t(giống như /reg)\n"
-        response += f"/{TelegramCommandHandler.COMMAND_DRG}\t(giống như /dereg)\n"
-        response += f"/{TelegramCommandHandler.COMMAND_RS}\t(giống như /reserve)\n"
+        response += f"Shortened commands:\n"
+        response += f"/{TelegramCommandHandler.COMMAND_RG}\t(same as /reg)\n"
+        response += f"/{TelegramCommandHandler.COMMAND_DRG}\t(same as /dereg)\n"
+        response += f"/{TelegramCommandHandler.COMMAND_RS}\t(same as /reserve)\n"
         response += f"\n"
-        response += f"Hướng dẫn chi tiết: https://hackmd.io/@1UKfawZER96uwy_xohcquQ/B1fyW-c4R"
+        response += f"Detailed guide: https://hackmd.io/@1UKfawZER96uwy_xohcquQ/B1fyW-c4R"
         await TelegramCommandHandler.reply_message(update=update, text=response)

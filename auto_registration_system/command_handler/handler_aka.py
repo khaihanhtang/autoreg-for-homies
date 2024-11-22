@@ -21,7 +21,7 @@ class AkaHandler:
         return res_id, res_full_name, res_alias
 
     @staticmethod
-    def _parse_user_case(sender_id: int, sender_full_name: str, message: str, command_string: str) \
+    def _parse_user_case(sender_id: int, sender_full_name: str, message: str) \
             -> (int, str, str):  # id, full_name, alias
         raw_alias: str = StringParser.remove_command(message=message)
         if ',' in raw_alias:
@@ -29,7 +29,7 @@ class AkaHandler:
         return sender_id, sender_full_name, StringParser.split_names(message=raw_alias)[0]
 
     @staticmethod
-    def handle(sender_id: int, sender_full_name: str, message: str, command_string: str,
+    def handle(sender_id: int, sender_full_name: str, message: str,
                message_entities: dict[MessageEntity, str], identity_manager: IdentityManager) -> str:
         if len(message_entities) >= 1:
             # message_entity = list(message_entities.keys())[0]
@@ -43,8 +43,7 @@ class AkaHandler:
             affected_id, affected_name, affected_alias = AkaHandler._parse_user_case(
                 sender_id=sender_id,
                 sender_full_name=sender_full_name,
-                message=message,
-                command_string=command_string
+                message=message
             )
         if affected_alias == "":
             alias = identity_manager.get_alias(telegram_id=affected_id)

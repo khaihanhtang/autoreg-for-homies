@@ -4,4 +4,4 @@ class NameConflictException(Exception):
         self._message: str = message
 
     def __repr__(self) -> str:
-        return f"{self._message} đã được đăng kí trước đó!"
+        return f"{self._message} was registered previously!"

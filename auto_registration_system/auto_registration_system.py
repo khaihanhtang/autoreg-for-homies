@@ -1,4 +1,3 @@
-import logging
 from typing import BinaryIO
 
 from telegram import MessageEntity
@@ -101,7 +100,7 @@ class AutoRegistrationSystem:
     def handle_all(self, username: str, chat_id: int):
         try:
             ChatManager.enforce_chat_id(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids)
-        except Exception as e:
+        except Exception:
             try:
                 self._admin_manager.enforce_admin(username=username)
             except Exception:
@@ -254,7 +253,7 @@ class AutoRegistrationSystem:
         self._admin_manager.enforce_admin(username=username)
         return open(history_file_name, 'rb')
 
-    def handle_aka(self, sender_id: int, sender_full_name: str, message: str, command_string: str,
+    def handle_aka(self, sender_id: int, sender_full_name: str, message: str,
                    message_entities: dict[MessageEntity, str]) -> str:
         if len(message_entities) >= 1:
             # self._admin_manager.enforce_admin(username=sender_username)
@@ -263,7 +262,6 @@ class AutoRegistrationSystem:
             sender_id=sender_id,
             sender_full_name=sender_full_name,
             message=message,
-            command_string=command_string,
             message_entities=message_entities,
             identity_manager=self._identity_manager
         )

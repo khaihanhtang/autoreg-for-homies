@@ -10,19 +10,19 @@ class ErrorMaker:
 
     @staticmethod
     def make_dv_not_found_exception(message: str) -> Exception:
-        return Exception(f"Không tìm thấy tag [dv] hoặc dv ở dòng '{message}'!")
+        return Exception(f"Tag [dv] or dv not found at line '{message}'!")
 
     @staticmethod
     def make_slot_not_found_exception(message: str) -> Exception:
-        return Exception(f"Không tìm thấy slot '{message}'!")
+        return Exception(f"Slot '{message}' not found!")
 
     @staticmethod
     def make_dv_conflict_exception(message: str) -> Exception:
-        return Exception(f"Ngày và địa điểm '{message}' bị trùng!")
+        return Exception(f"Date and time '{message}' are repeated!")
 
     @staticmethod
     def make_slot_conflict_exception(message: str) -> Exception:
-        return Exception(f"Slot '{message}' bị trùng!")
+        return Exception(f"Slot '{message}' is repeated!")
 
     @staticmethod
     def make_name_conflict_exception(message: str) -> NameConflictException:
@@ -30,39 +30,39 @@ class ErrorMaker:
 
     @staticmethod
     def make_name_not_found_exception(message: str) -> Exception:
-        return Exception(f"Không tìm thấy tên '{message}'!")
+        return Exception(f"Cannot find name '{message}'!")
 
     @staticmethod
     def make_admin_permission_error_exception() -> Exception:
-        return Exception(f"Lệnh này cần quyền admin!")
+        return Exception(f"This command requires admin permission!")
 
     @staticmethod
     def make_system_locked_exception() -> Exception:
-        return Exception(f"Hệ thống đã bị khóa! Vui lòng chờ mở khóa để sử dụng!")
+        return Exception(f"The system is locked! Please wait until being unlock!")
 
     @staticmethod
     def make_chat_id_enforcement() -> Exception:
-        return Exception(f"Bạn không thể sử dụng bot ở đây!")
+        return Exception(f"You cannot use bot here!")
 
     @staticmethod
-    def make_playable_player_not_found_exception() -> Exception:
-        return Exception(f"Không tìm thấy người chơi để dự bị!")
+    def make_pending_player_not_found_exception() -> Exception:
+        return Exception(f"Cannot find pending player!")
 
     @staticmethod
     def make_single_line_not_satisfied_exception() -> Exception:
-        return Exception(f"Lệnh này chỉ được phép trên 1 dòng!")
+        return Exception(f"This command is only allowed in a single line!")
 
     @staticmethod
     def make_message_not_containing_alpha_exception(message: str) -> Exception:
-        return Exception(f"'{message}' phải tồn tại ít nhất một chữ cái!")
+        return Exception(f"'{message}' must contain at least an alphabet character (a - z)!")
 
     @staticmethod
     def make_message_containing_comma_exception(message: str) -> Exception:
-        return Exception(f"'{message} không hợp lệ vì chứa dấu ','!")
+        return Exception(f"'{message} is not valid because it contains ','!")
 
     @staticmethod
     def make_release_time_invalid_exception() -> Exception:
-        return Exception(f"Thời gian công bố phải sau thời điểm hiện tại!")
+        return Exception(f"Release time must be after now!")
 
     @staticmethod
     def make_time_list_invalid_exception() -> Exception:
