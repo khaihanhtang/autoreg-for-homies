@@ -1,3 +1,4 @@
+import logging
 from typing import BinaryIO
 
 from telegram import MessageEntity
@@ -13,13 +14,13 @@ from auto_registration_system.data_structure.lock_manager import LockManager
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.data_structure.admin_manager import AdminManager
 from auto_registration_system.command_handler.handler_new import NewHandler
+from auto_registration_system.data_structure.release_time_manager import ReleaseTimeManager
 from auto_registration_system.exception.error_maker import ErrorMaker
 from auto_registration_system.exception.exception_syntax_error import SyntaxErrorException
 from auto_registration_system.term import Term
 from config import Config
 from string_parser.string_parser import StringParser
 from auto_registration_system.data_structure.identity_manager import IdentityManager
-from datetime import datetime
 from auto_registration_system.data_structure.time_manager import TimeManager
 from data_handler.data_handler import DataHandler
 from auto_registration_system.data_structure.reminder import Reminder
@@ -27,64 +28,21 @@ from auto_registration_system.data_structure.reminder import Reminder
 
 class AutoRegistrationSystem:
 
-    class ReleaseTimeManager:
-        def __init__(self, time_manager: TimeManager):
-            self._time_manager: TimeManager = time_manager
-            self._release_time: datetime or None = None
-            self._enabled: bool = False
-
-        @property
-        def release_time(self) -> datetime or None:
-            return self._release_time
-
-        @property
-        def enabled(self) -> bool:
-            return self._enabled
-
-        def disable(self):
-            self._enabled = False
-
-        def enable(self):
-            self._enabled = True
-
-        @release_time.setter
-        def release_time(self, new_release_time: datetime):
-            self._release_time = new_release_time
-            self._enabled = True
-            if new_release_time is None:
-                self._enabled = False
-            elif new_release_time <= self._time_manager.now():
-                self._enabled = False
-                raise ErrorMaker.make_release_time_invalid_exception()
-
-        def is_releasable(self) -> bool:
-            if self._enabled and self._release_time is not None and self._release_time <= self._time_manager.now():
-                return True
-            return False
-
-        def release_time_to_str(self) -> str or None:
-            return self._time_manager.datetime_to_str(datetime_val=self.release_time)
-
-        def release_time_to_str_with_input_time_format(self) -> str or None:
-            return self._time_manager.datetime_to_str_with_input_time_format(datetime_val=self.release_time)
-
-    def __init__(self, admins: set[str], chat_ids: set[int], alias_file_name: str, time_manager: TimeManager):
+    def __init__(self, admins: set[str], alias_file_name: str, time_manager: TimeManager):
         self._data: RegistrationData or None = None
         self._pre_released_data: RegistrationData or None = None
         self._admin_manager: AdminManager = AdminManager(admins=admins)
-        self._chat_manager: ChatManager = ChatManager(chat_ids=chat_ids)
         self._lock_manager: LockManager = LockManager(locked=False)
         self._identity_manager: IdentityManager = IdentityManager(alias_file_name=alias_file_name)
-        self._release_time_manager: AutoRegistrationSystem.ReleaseTimeManager \
-            = AutoRegistrationSystem.ReleaseTimeManager(time_manager=time_manager)
+        self._release_time_manager: ReleaseTimeManager = ReleaseTimeManager()
         self._reminder: Reminder = Reminder(
             time_list=Config.reminder_time_list,
             time_manager=time_manager,
             release_time=self._release_time_manager.release_time
         )
 
-    def attempt_release_data(self) -> bool:
-        if self._release_time_manager.is_releasable():
+    def attempt_release_data(self, time_manager: TimeManager) -> bool:
+        if self._release_time_manager.is_releasable(time_manager=time_manager):
             self._data = self._pre_released_data
             self._pre_released_data = None
             self._release_time_manager.disable()
@@ -128,7 +86,7 @@ class AutoRegistrationSystem:
         for date_venue_name, date_venue_data in data.bookings_by_date_venue.items():
             res += f"{Term.DATE_VENUE} {date_venue_name}\n"
             for slot_label, slot in date_venue_data.items():
-                res += f"{Term.INDENT_SPACE}[{slot_label}] Còn thiếu {slot.get_num_available()} người.\n"
+                res += f"{Term.INDENT_SPACE}[{slot_label}] Need {slot.get_num_available()} additional players.\n"
         return res
 
     def handle_reset(self, username: str) -> str:
@@ -138,7 +96,17 @@ class AutoRegistrationSystem:
             return repr(e)
 
         self._data.reset()
-        return "Đã xóa toàn bộ danh sách!"
+        return "The entire list has been deleted!"
+
+    def handle_all(self, username: str, chat_id: int):
+        try:
+            ChatManager.enforce_chat_id(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids)
+        except Exception as e:
+            logging.exception(e)
+            try:
+                self._admin_manager.enforce_admin(username=username)
+            except Exception:
+                raise ErrorMaker.make_admin_permission_error_exception()
 
     def handle_new(self, username: str, message: str, chat_id: int) -> (str, bool):
         is_in_main_group = True
@@ -151,13 +119,13 @@ class AutoRegistrationSystem:
         try:
             response = NewHandler.handle(message=message, data=temp_data)
             if response:
-                if chat_id in self._chat_manager.chat_ids:
+                if ChatManager.is_chat_id_allowed(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids):
                     self._data = temp_data
                 else:
                     self._pre_released_data = temp_data
                     is_in_main_group = False
-                return "Cài đặt thành công!", is_in_main_group
-            return "Không có gì thay đổi", is_in_main_group
+                return "Set up successfully!", is_in_main_group
+            return "Nothing has been changed", is_in_main_group
         except Exception as e:
             return repr(e), is_in_main_group
 
@@ -165,7 +133,10 @@ class AutoRegistrationSystem:
         try:
             self._admin_manager.enforce_admin(username=username)
             message = StringParser.remove_command(message=message)
-            self._release_time_manager.release_time = time_manager.str_to_datetime(message)
+            self._release_time_manager.set_release_time(
+                new_release_time=time_manager.str_to_datetime(message),
+                time_manager=time_manager
+            )
             self._reminder = Reminder(
                 time_list=Config.reminder_time_list,
                 time_manager=time_manager,
@@ -188,13 +159,15 @@ class AutoRegistrationSystem:
             data=AvHandler.handle(data=self._data)
         )
         if res is None or len(res) == 0:
-            return "Không còn slot trống!"
+            return "There is no available slot!"
         return res
 
-    def write_all_data_to_files(self, data_handler: DataHandler):
+    def write_all_data_to_files(self, data_handler: DataHandler, time_manager: TimeManager):
         data_handler.write_data_to_files(
             main_list_as_str=self.get_all_slots_as_string(is_main_data=True),
-            release_time_as_str=self._release_time_manager.release_time_to_str_with_input_time_format(),
+            release_time_as_str=self._release_time_manager.release_time_to_str_with_input_time_format(
+                time_manager=time_manager
+            ),
             pre_released_list_as_str=self.get_all_slots_as_string(is_main_data=False)
         )
 
@@ -202,7 +175,7 @@ class AutoRegistrationSystem:
             -> (str, str or None):
         try:
             self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
-            self._chat_manager.enforce_chat_id(chat_id=chat_id)
+            ChatManager.enforce_chat_id(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids)
             StringParser.enforce_single_line_message(message=message)
             response, conflict_names, slot_label = RegHandler.handle(message=message, data=self._data)
 
@@ -220,7 +193,7 @@ class AutoRegistrationSystem:
     def handle_reserve(self, username: str, message: str, chat_id: int) -> str:
         try:
             self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
-            self._chat_manager.enforce_chat_id(chat_id=chat_id)
+            ChatManager.enforce_chat_id(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids)
             StringParser.enforce_single_line_message(message=message)
             return ReserveHandler.handle(message=message, data=self._data)
         except Exception as e:
@@ -229,11 +202,11 @@ class AutoRegistrationSystem:
     def handle_deregister(self, command_string: str, username: str, id_string: str, message: str, chat_id: int) -> str:
         try:
             self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
-            self._chat_manager.enforce_chat_id(chat_id=chat_id)
+            ChatManager.enforce_chat_id(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids)
             StringParser.enforce_single_line_message(message=message)
             return DeregHandler.handle(message=message, data=self._data)
         except SyntaxErrorException:
-            response: str = "Lỗi cú pháp\\!"
+            response: str = "Syntax error\\!"
             suggestion: str = DeregHandler.make_suggestion(
                 command_string=command_string,
                 id_string=id_string,
@@ -250,7 +223,7 @@ class AutoRegistrationSystem:
 
     def handle_allplayable(self, username: str, chat_id: int) -> str:
         try:
-            self._chat_manager.enforce_chat_id(chat_id=chat_id)
+            ChatManager.enforce_chat_id(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids)
             self._admin_manager.enforce_admin(username=username)
         except Exception as e:
             return repr(e)
@@ -264,7 +237,7 @@ class AutoRegistrationSystem:
         try:
             self._admin_manager.enforce_admin(username=username)
             self._lock_manager.locked = True
-            return "Hệ thống đã bị khóa!"
+            return "The system has been locked!"
         except Exception as e:
             return repr(e)
 
@@ -272,7 +245,7 @@ class AutoRegistrationSystem:
         try:
             self._admin_manager.enforce_admin(username=username)
             self._lock_manager.locked = False
-            return "Hệ thống đã được mở khóa!"
+            return "The system has been unlocked!"
         except Exception as e:
             return repr(e)
 

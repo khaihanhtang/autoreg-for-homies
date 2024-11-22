@@ -3,13 +3,11 @@ from auto_registration_system.exception.error_maker import ErrorMaker
 
 class ChatManager:
 
-    def __init__(self, chat_ids: set[int]):
-        self._chat_ids = chat_ids
+    @staticmethod
+    def is_chat_id_allowed(chat_id: int, allowed_chat_ids: set[int]) -> bool:
+        return chat_id in allowed_chat_ids
 
-    @property
-    def chat_ids(self):
-        return self._chat_ids
-
-    def enforce_chat_id(self, chat_id: int):
-        if chat_id not in self._chat_ids:
+    @staticmethod
+    def enforce_chat_id(chat_id: int, allowed_chat_ids: set[int]):
+        if not ChatManager.is_chat_id_allowed(chat_id=chat_id, allowed_chat_ids=allowed_chat_ids):
             raise ErrorMaker.make_chat_id_enforcement()

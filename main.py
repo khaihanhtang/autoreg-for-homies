@@ -29,10 +29,10 @@ app.add_handler(
     CommandHandler(command=TelegramCommandHandler.COMMAND_HELLO, callback=TelegramCommandHandler.run_hello)
 )
 app.add_handler(
-    CommandHandler(command=TelegramCommandHandler.COMMAND_RETRIEVE, callback=TelegramCommandHandler.run_retrieve)
+    CommandHandler(command=TelegramCommandHandler.COMMAND_RETRIEVE, callback=TelegramCommandHandler.run_all)
 )
 app.add_handler(
-    CommandHandler(command=TelegramCommandHandler.COMMAND_ALL, callback=TelegramCommandHandler.run_retrieve)
+    CommandHandler(command=TelegramCommandHandler.COMMAND_ALL, callback=TelegramCommandHandler.run_all)
 )    # same as /retrieve
 app.add_handler(
     CommandHandler(command=TelegramCommandHandler.COMMAND_NEW, callback=TelegramCommandHandler.run_new)

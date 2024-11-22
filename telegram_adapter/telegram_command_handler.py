@@ -1,3 +1,5 @@
+import logging
+
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, \
     ReplyKeyboardRemove, ForceReply, User, Message, CallbackQuery
 from telegram.constants import MessageEntityType, ParseMode
@@ -5,6 +7,7 @@ from telegram.ext import ContextTypes
 
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
 from auto_registration_system.command_handler.handler_dereg import DeregHandler
+from auto_registration_system.data_structure.chat_manager import ChatManager
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.data_structure.time_manager import TimeManager
 from tracer import Tracer
@@ -26,7 +29,6 @@ class TelegramCommandHandler:
 
     auto_reg_system: AutoRegistrationSystem = AutoRegistrationSystem(
         admins=Config.admins,
-        chat_ids=Config.chat_ids,
         alias_file_name=Config.alias_file_name,
         time_manager=time_manager,
     )
@@ -43,56 +45,6 @@ class TelegramCommandHandler:
         file_release_time=Config.file_name_release_time,
         file_pre_released_list=Config.file_name_pre_released_list
     )
-
-    @staticmethod
-    def initialize():
-        try:
-            main_list_as_str, release_time_as_str, pre_released_list_str = (TelegramCommandHandler
-                                                                            .data_handler
-                                                                            .read_data_from_files()
-                                                                            )
-            print("Main List:")
-            print(main_list_as_str)
-            try:
-                TelegramCommandHandler.auto_reg_system.handle_new(
-                    username="*",  # special username for enforcing admin
-                    message=f"/{TelegramCommandHandler.COMMAND_NEW} {main_list_as_str}",
-                    chat_id=Config.default_chat_id
-                )
-                print("Main list is loaded successfully!")
-            except Exception:
-                print("Unable to load main list! Main list is reset to be empty!")
-
-            print("------------------------------------------")
-            print(f"Release time: {release_time_as_str}")
-            try:
-                message = TelegramCommandHandler.auto_reg_system.handle_notitime(
-                    username="*",  # special username for enforcing admin
-                    message=f"/{TelegramCommandHandler.COMMAND_NOTITIME} {release_time_as_str}",
-                    time_manager=TelegramCommandHandler.time_manager
-                )
-                print(f"{message}")
-            except Exception:
-                print("Unable to load release time! Release time is set to be None!")
-
-            print(TelegramCommandHandler.auto_reg_system.release_time_manager.release_time)
-
-            print("------------------------------------------")
-            print("Pre-released list:")
-            print(pre_released_list_str)
-            try:
-                TelegramCommandHandler.auto_reg_system.handle_new(
-                    username="*",  # special username for enforcing admin
-                    message=f"/{TelegramCommandHandler.COMMAND_NEW} {pre_released_list_str}",
-                    chat_id=0,  # chat_id is set for making pre-released list
-                )
-                print(TelegramCommandHandler.auto_reg_system.get_all_slots_as_string(is_main_data=False))
-                print("Pre-released list is loaded successfully!")
-            except Exception:
-                print("Unable to load pre-released list! Pre-released list is reset to be empty!")
-        except Exception:
-            print("No data or error data in files!")
-
 
     NUM_BUTTONS_PER_LINE = 3
 
@@ -130,6 +82,59 @@ class TelegramCommandHandler:
     CALLBACK_DATA_RG = f"_{COMMAND_RG}"
 
     SECOND_CLICK_TO_DEREGISTER = False
+
+    @staticmethod
+    def initialize():
+        try:
+            main_list_as_str, release_time_as_str, pre_released_list_str = (TelegramCommandHandler
+                                                                            .data_handler
+                                                                            .read_data_from_files()
+                                                                            )
+            print("Main List:")
+            print(main_list_as_str)
+            try:
+                TelegramCommandHandler.auto_reg_system.handle_new(
+                    username="*",  # special username for enforcing admin
+                    message=f"/{TelegramCommandHandler.COMMAND_NEW} {main_list_as_str}",
+                    chat_id=Config.default_chat_id
+                )
+                print("Main list is loaded successfully!")
+            except Exception as e:  # pylint: disable=broad-except
+                logging.exception(e)
+                print("Unable to load main list! Main list is reset to be empty!")
+
+            print("------------------------------------------")
+            print(f"Release time: {release_time_as_str}")
+            try:
+                message = TelegramCommandHandler.auto_reg_system.handle_notitime(
+                    username="*",  # special username for enforcing admin
+                    message=f"/{TelegramCommandHandler.COMMAND_NOTITIME} {release_time_as_str}",
+                    time_manager=TelegramCommandHandler.time_manager
+                )
+                print(f"{message}")
+            except Exception as e:
+                logging.exception(e)
+                print("Unable to load release time! Release time is set to be None!")
+
+            print(TelegramCommandHandler.auto_reg_system.release_time_manager.release_time)
+
+            print("------------------------------------------")
+            print("Pre-released list:")
+            print(pre_released_list_str)
+            try:
+                TelegramCommandHandler.auto_reg_system.handle_new(
+                    username="*",  # special username for enforcing admin
+                    message=f"/{TelegramCommandHandler.COMMAND_NEW} {pre_released_list_str}",
+                    chat_id=0,  # chat_id is set for making pre-released list
+                )
+                print(TelegramCommandHandler.auto_reg_system.get_all_slots_as_string(is_main_data=False))
+                print("Pre-released list is loaded successfully!")
+            except Exception as e:
+                logging.exception(e)
+                print("Unable to load pre-released list! Pre-released list is reset to be empty!")
+        except Exception as e:
+            logging.exception(e)
+            print("No data or error data in files!")
 
     @staticmethod
     async def reply_message(
@@ -298,7 +303,8 @@ class TelegramCommandHandler:
             inline_button_list = InlineKeyboardMarkup(inline_keyboard=button_list)
         else:
             response += (f"Không có slot nào cho {clickable_link_for_telegram_id} "
-                         + f"\\(với tên/alias {StringParser.replace_escape_characters_for_markdown(alias_or_full_name)}\\) để hủy đăng kí\\!")
+                         + f"\\(với tên/alias {StringParser
+                         .replace_escape_characters_for_markdown(alias_or_full_name)}\\) để hủy đăng kí\\!")
 
         await context.bot.send_message(
             chat_id=query.message.chat.id,
@@ -357,7 +363,8 @@ class TelegramCommandHandler:
                 message_id=from_message_id,
                 chat_id=from_chat_id
             )
-        except Exception:
+        except Exception as e:
+            logging.exception(e)
             TelegramCommandHandler.log_message(message="Failed to delete previous message!")
 
     @staticmethod
@@ -379,7 +386,7 @@ class TelegramCommandHandler:
                 text=f"/{TelegramCommandHandler.COMMAND_ALL}\t{identity_message}",
                 parse_mode=ParseMode.MARKDOWN_V2
             )
-            await TelegramCommandHandler.run_retrieve(update=Update(update_id=res.id, message=res), context=context)
+            await TelegramCommandHandler.run_all(update=Update(update_id=res.id, message=res), context=context)
             return
         elif query.data == TelegramCommandHandler.CALLBACK_DATA_HELP:
             res = await context.bot.send_message(
@@ -494,13 +501,17 @@ class TelegramCommandHandler:
                         message_id=TelegramCommandHandler.last_message_id,
                         chat_id=TelegramCommandHandler.last_chat_id
                     )
-                except Exception:
+                except Exception as e:
+                    logging.exception(e)
                     TelegramCommandHandler.log_message(message="Failed to delete previous message!")
             TelegramCommandHandler.last_chat_id = new_chat_id
             TelegramCommandHandler.last_message_id = new_message_id
 
         # write all data to file
-        TelegramCommandHandler.auto_reg_system.write_all_data_to_files(data_handler=TelegramCommandHandler.data_handler)
+        TelegramCommandHandler.auto_reg_system.write_all_data_to_files(
+            data_handler=TelegramCommandHandler.data_handler,
+            time_manager=TelegramCommandHandler.time_manager
+        )
 
     @staticmethod
     def log_message_from_user(update: Update, is_history_required: bool = True):
@@ -529,22 +540,30 @@ class TelegramCommandHandler:
         await TelegramCommandHandler.reply_message(update=update, text=f'Chào {update.effective_user.first_name}')
 
     @staticmethod
-    async def run_retrieve(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def run_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
         TelegramCommandHandler.log_message_from_user(update=update)
         chat_id = update.message.chat_id
-        if chat_id in Config.chat_ids:
-            await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
+        try:
+            TelegramCommandHandler.auto_reg_system.handle_all(username=update.effective_user.username, chat_id=chat_id)
+            if ChatManager.is_chat_id_allowed(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids):
+                await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
+                    update=update,
+                    context=context,
+                    message=None,
+                    is_main_data=True
+                )
+            else:
+                await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
+                    update=update,
+                    context=context,
+                    message=None,
+                    is_main_data=False
+                )
+                await TelegramCommandHandler.respond_release_time_status(update=update)
+        except Exception as e:
+            await TelegramCommandHandler.reply_message(
                 update=update,
-                context=context,
-                message=None,
-                is_main_data=True
-            )
-        else:
-            await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
-                update=update,
-                context=context,
-                message=None,
-                is_main_data=False
+                text=repr(e)
             )
 
     @staticmethod
@@ -557,8 +576,7 @@ class TelegramCommandHandler:
             text="Danh sách các slot còn thiếu người:\n\n" +
                  TelegramCommandHandler.auto_reg_system.get_available_slots_as_string(),
             reply_markup=TelegramCommandHandler.make_inline_buttons_for_registration(
-                data=TelegramCommandHandler.auto_reg_system.data
-            )
+                data=TelegramCommandHandler.auto_reg_system.data)
         )
         new_av_chat_id = sent_message_info.chat_id
         new_av_message_id = sent_message_info.message_id
@@ -570,13 +588,30 @@ class TelegramCommandHandler:
                     message_id=TelegramCommandHandler.last_av_message_id,
                     chat_id=TelegramCommandHandler.last_av_chat_id
                 )
-            except Exception:
+            except Exception as e:
+                logging.exception(e)
                 TelegramCommandHandler.log_message(message="Failed to delete message!")
 
         # record id of current message
         if new_av_chat_id is not None and new_av_message_id is not None:
             TelegramCommandHandler.last_av_chat_id = new_av_chat_id
             TelegramCommandHandler.last_av_message_id = new_av_message_id
+
+    @staticmethod
+    async def respond_release_time_status(update: Update):
+        if TelegramCommandHandler.auto_reg_system.release_time_manager.enabled:
+            await TelegramCommandHandler.reply_message(
+                update=update,
+                text=f"✅ The intended release time is {
+                    TelegramCommandHandler.auto_reg_system.release_time_manager.release_time_to_str(
+                        time_manager=TelegramCommandHandler.time_manager)
+                }"
+            )
+        else:
+            await TelegramCommandHandler.reply_message(
+                update=update,
+                text="❌ Please set up release time!"
+            )
 
     @staticmethod
     async def run_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -597,18 +632,7 @@ class TelegramCommandHandler:
                 update=update,
                 text="This is pre-released list, not public yet!"
             )
-            if TelegramCommandHandler.auto_reg_system.release_time_manager.enabled:
-                await TelegramCommandHandler.reply_message(
-                    update=update,
-                    text=f"✅ The intended release time is {
-                        TelegramCommandHandler.auto_reg_system.release_time_manager.release_time_to_str()
-                    }"
-                )
-            else:
-                await TelegramCommandHandler.reply_message(
-                    update=update,
-                    text="❌ Please set up release time!"
-                )
+            await TelegramCommandHandler.respond_release_time_status(update=update)
 
     @staticmethod
     def remove_jobs(name: str, context: ContextTypes.DEFAULT_TYPE):
@@ -627,7 +651,9 @@ class TelegramCommandHandler:
                 chat_id=Config.default_chat_id,
                 text=f"The list will be released in {minutes_left} minute(s)"
             )
-        if TelegramCommandHandler.auto_reg_system.attempt_release_data():
+        if TelegramCommandHandler.auto_reg_system.attempt_release_data(
+                time_manager=TelegramCommandHandler.time_manager
+        ):
             TelegramCommandHandler.remove_jobs(name=Config.job_name_for_release, context=context)
             await TelegramCommandHandler.write_data_and_update_bot_message_for_full_list(
                 update=None,
@@ -659,7 +685,10 @@ class TelegramCommandHandler:
         TelegramCommandHandler.run_job_for_release(context=context)
 
         # write all data to file
-        TelegramCommandHandler.auto_reg_system.write_all_data_to_files(data_handler=TelegramCommandHandler.data_handler)
+        TelegramCommandHandler.auto_reg_system.write_all_data_to_files(
+            data_handler=TelegramCommandHandler.data_handler,
+            time_manager=TelegramCommandHandler.time_manager
+        )
 
     @staticmethod
     async def run_reset(update: Update, _):
@@ -795,7 +824,8 @@ class TelegramCommandHandler:
                 history_file_name=Config.history_file_name
             )
             await update.message.reply_document(document=file)
-        except Exception:
+        except Exception as e:
+            logging.exception(e)
             await TelegramCommandHandler.reply_message(
                 update=update,
                 text="Không thể gửi file! Cần quyền admin hoặc kết nối gặp vấn đề!"
