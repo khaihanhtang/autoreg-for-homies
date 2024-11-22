@@ -13,7 +13,7 @@ class Config:
     alias_file_name: str = "alias.json"
     time_zone: StaticTzInfo = pytz.timezone("Asia/Singapore")
     input_time_format: str = "%H:%M:%S %d/%m/%Y"
-    output_time_format: str = "%H:%M:%S %d-%B-%Y (%Z)"
+    output_time_format: str = "%H:%M:%S %A %d-%B-%Y (%Z)"
 
     # variables for release time
     job_name_for_release: str = "release"  # used when creating job for the telegram bot to run before release
