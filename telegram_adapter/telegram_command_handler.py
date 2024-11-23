@@ -858,7 +858,7 @@ class TelegramCommandHandler:
     async def run_command_not_found(update: Update, _):
         TelegramCommandHandler.log_message_from_user(update=update)
 
-        await TelegramCommandHandler.reply_message(update=update, text="In correct command!")
+        await TelegramCommandHandler.reply_message(update=update, text="Incorrect command/syntax!")
 
     @staticmethod
     async def run_allplayable(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -933,7 +933,7 @@ class TelegramCommandHandler:
     async def run_help(update: Update, _):
         TelegramCommandHandler.log_message_from_user(update=update)
 
-        response: str = "You the following syntaxes:\n"
+        response: str = "Use the following syntaxes:\n"
         response += f"/{TelegramCommandHandler.COMMAND_REG} [name 1], ..., [name n] [slot]\t(register)\n"
         response += f"/{TelegramCommandHandler.COMMAND_DEREG} [name 1], ..., [name n] [slot]\t(deregister)\n"
         response += f"/{TelegramCommandHandler.COMMAND_RESERVE} [name 1], ..., [name n] [slot]\t(reserve)\n"
