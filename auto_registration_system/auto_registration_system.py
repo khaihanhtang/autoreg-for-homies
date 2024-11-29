@@ -23,16 +23,17 @@ from auto_registration_system.data_structure.identity_manager import IdentityMan
 from auto_registration_system.data_structure.time_manager import TimeManager
 from data_handler.data_handler import DataHandler
 from auto_registration_system.data_structure.reminder import Reminder
+from tracer import Tracer
 
 
 class AutoRegistrationSystem:
 
-    def __init__(self, admins: set[str], alias_file_name: str, time_manager: TimeManager):
+    def __init__(self, admins: set[str], identity_manager: IdentityManager, time_manager: TimeManager):
         self._data: RegistrationData or None = None
         self._pre_released_data: RegistrationData or None = None
         self._admin_manager: AdminManager = AdminManager(admins=admins)
         self._lock_manager: LockManager = LockManager(locked=False)
-        self._identity_manager: IdentityManager = IdentityManager(alias_file_name=alias_file_name)
+        self._identity_manager: IdentityManager = identity_manager
         self._release_time_manager: ReleaseTimeManager = ReleaseTimeManager()
         self._reminder: Reminder = Reminder(
             time_list=Config.reminder_time_list,
@@ -248,9 +249,9 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e)
 
-    def handle_history(self, username: str, history_file_name: str) -> BinaryIO:
+    def handle_history(self, username: str, tracer: Tracer) -> BinaryIO:
         self._admin_manager.enforce_admin(username=username)
-        return open(history_file_name, 'rb')
+        return tracer.load_file_history()
 
     def handle_aka(self, sender_id: int, sender_full_name: str, message: str,
                    message_entities: dict[MessageEntity, str]) -> str:

@@ -25,23 +25,22 @@ class TelegramCommandHandler:
             output_time_format=Config.output_time_format
         )
 
-    auto_reg_system: AutoRegistrationSystem = AutoRegistrationSystem(
-        admins=Config.admins,
-        alias_file_name=Config.alias_file_name,
-        time_manager=time_manager,
-    )
-
-    tracer: Tracer = Tracer(
-        log_file_name=Config.log_file_name,
-        history_file_name=Config.history_file_name,
-        time_manager=time_manager
-    )
-
     data_handler: DataHandler = DataHandler(
         directory_data=Config.directory_data,
-        file_main_list=Config.file_name_main_list,
-        file_release_time=Config.file_name_release_time,
-        file_pre_released_list=Config.file_name_pre_released_list
+        file_name_log=Config.file_name_log,
+        file_name_history=Config.file_name_history,
+        file_name_alias=Config.file_name_alias,
+        file_name_main_list=Config.file_name_main_list,
+        file_name_release_time=Config.file_name_release_time,
+        file_name_pre_released_list=Config.file_name_pre_released_list
+    )
+
+    tracer: Tracer = data_handler.load_tracer(time_manager=time_manager)
+
+    auto_reg_system: AutoRegistrationSystem = AutoRegistrationSystem(
+        admins=Config.admins,
+        identity_manager=data_handler.load_identity_manager(),
+        time_manager=time_manager,
     )
 
     NUM_BUTTONS_PER_LINE = 3
@@ -898,7 +897,7 @@ class TelegramCommandHandler:
         try:
             file = TelegramCommandHandler.auto_reg_system.handle_history(
                 username=update.effective_user.username,
-                history_file_name=Config.history_file_name
+                tracer=TelegramCommandHandler.tracer
             )
             await update.message.reply_document(document=file)
         except Exception:

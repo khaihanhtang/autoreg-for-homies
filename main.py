@@ -1,7 +1,6 @@
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler
 from telegram.ext import filters
 
-from config import Config
 from telegram_adapter.telegram_command_handler import TelegramCommandHandler
 
 import logging
@@ -12,7 +11,6 @@ token: str = input("Enter bot token: ")
 print(f"Please remember to run command /{TelegramCommandHandler.COMMAND_START}")
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename=Config.log_file_name, encoding='utf-8', level=logging.INFO)
 
 app = (
     ApplicationBuilder()
