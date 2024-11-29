@@ -6,6 +6,7 @@ from telegram.ext import ContextTypes
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
 from auto_registration_system.command_handler.handler_dereg import DeregHandler
 from auto_registration_system.data_structure.chat_manager import ChatManager
+from auto_registration_system.data_structure.deletion_queue import DeletionQueue
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.data_structure.time_manager import TimeManager
 from tracer import Tracer
@@ -18,31 +19,32 @@ from config import Config
 
 
 class TelegramCommandHandler:
-
     time_manager: TimeManager = TimeManager(
-            time_zone=Config.time_zone,
-            input_time_format=Config.input_time_format,
-            output_time_format=Config.output_time_format
-        )
-
-    auto_reg_system: AutoRegistrationSystem = AutoRegistrationSystem(
-        admins=Config.admins,
-        alias_file_name=Config.alias_file_name,
-        time_manager=time_manager,
-    )
-
-    tracer: Tracer = Tracer(
-        log_file_name=Config.log_file_name,
-        history_file_name=Config.history_file_name,
-        time_manager=time_manager
+        time_zone=Config.time_zone,
+        input_time_format=Config.input_time_format,
+        output_time_format=Config.output_time_format
     )
 
     data_handler: DataHandler = DataHandler(
         directory_data=Config.directory_data,
-        file_main_list=Config.file_name_main_list,
-        file_release_time=Config.file_name_release_time,
-        file_pre_released_list=Config.file_name_pre_released_list
+        file_name_log=Config.file_name_log,
+        file_name_history=Config.file_name_history,
+        file_name_alias=Config.file_name_alias,
+        file_name_deletion_queue=Config.file_name_deletion_queue,
+        file_name_main_list=Config.file_name_main_list,
+        file_name_release_time=Config.file_name_release_time,
+        file_name_pre_released_list=Config.file_name_pre_released_list
     )
+
+    tracer: Tracer = data_handler.load_tracer(time_manager=time_manager)
+
+    auto_reg_system: AutoRegistrationSystem = AutoRegistrationSystem(
+        admins=Config.admins,
+        identity_manager=data_handler.load_identity_manager(),
+        time_manager=time_manager,
+    )
+
+    deletion_queue: DeletionQueue = DeletionQueue()
 
     NUM_BUTTONS_PER_LINE = 3
 
@@ -188,6 +190,25 @@ class TelegramCommandHandler:
                 text=text,
                 reply_markup=reply_markup
             )
+
+    @staticmethod
+    async def attempt_delete_message(context: ContextTypes.DEFAULT_TYPE):
+        try:
+            has_message_to_delete, (chat_id, message_id) = TelegramCommandHandler.deletion_queue.dequeue()
+            if has_message_to_delete:
+                await context.bot.deleteMessage(
+                    message_id=message_id,
+                    chat_id=chat_id
+                )
+        except Exception:
+            TelegramCommandHandler.log_message(message="Failed to delete previous message!")
+
+    @staticmethod
+    def delete_message(
+            chat_id: int,
+            message_id,
+    ):
+        TelegramCommandHandler.deletion_queue.enqueue(chat_id=chat_id, message_id=message_id)
 
     @staticmethod
     def make_callback_data_for_rg(slot_label: str) -> str:
@@ -400,13 +421,7 @@ class TelegramCommandHandler:
             context=context,
             effective_user=sender
         )
-        try:
-            await context.bot.deleteMessage(
-                message_id=from_message_id,
-                chat_id=from_chat_id
-            )
-        except Exception:
-            TelegramCommandHandler.log_message(message="Failed to delete previous message!")
+        TelegramCommandHandler.delete_message(chat_id=from_chat_id, message_id=from_message_id)
 
     @staticmethod
     async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -446,7 +461,7 @@ class TelegramCommandHandler:
                 text=f"/{TelegramCommandHandler.COMMAND_AV}\t{identity_message}",
                 parse_mode=ParseMode.MARKDOWN_V2
             )
-            await TelegramCommandHandler.run_av(update=Update(update_id=res.id, message=res), context=context)
+            await TelegramCommandHandler.run_av(update=Update(update_id=res.id, message=res), _=None)
             return
         elif TelegramCommandHandler.is_callback_data_rg(query_data=query.data):
             slot_label = StringParser.get_last_word(message=query.data)
@@ -557,13 +572,10 @@ class TelegramCommandHandler:
         # delete previous message
         if is_main_data:
             if TelegramCommandHandler.last_chat_id is not None and TelegramCommandHandler.last_message_id is not None:
-                try:
-                    await context.bot.deleteMessage(
-                        message_id=TelegramCommandHandler.last_message_id,
-                        chat_id=TelegramCommandHandler.last_chat_id
-                    )
-                except Exception:
-                    TelegramCommandHandler.log_message(message="Failed to delete previous message!")
+                TelegramCommandHandler.delete_message(
+                    chat_id=TelegramCommandHandler.last_chat_id,
+                    message_id=TelegramCommandHandler.last_message_id
+                )
             TelegramCommandHandler.last_chat_id = new_chat_id
             TelegramCommandHandler.last_message_id = new_message_id
 
@@ -589,6 +601,7 @@ class TelegramCommandHandler:
     async def run_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         TelegramCommandHandler.log_message_from_user(update=update)
         TelegramCommandHandler.run_job_for_release(context=context)
+        TelegramCommandHandler.run_job_for_deleting_messages(context=context)
         await TelegramCommandHandler.reply_message(
             update=update,
             text="I (bot) checked and started all potential jobs!"
@@ -627,7 +640,7 @@ class TelegramCommandHandler:
             )
 
     @staticmethod
-    async def run_av(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def run_av(update: Update, _):
         TelegramCommandHandler.log_message_from_user(update=update)
 
         if ChatManager.is_chat_id_allowed(chat_id=update.message.chat_id, allowed_chat_ids=Config.allowed_chat_ids):
@@ -645,13 +658,10 @@ class TelegramCommandHandler:
             # try delete previous message
             if (TelegramCommandHandler.last_av_chat_id is not None
                     and TelegramCommandHandler.last_av_chat_id is not None):
-                try:
-                    await context.bot.deleteMessage(
-                        message_id=TelegramCommandHandler.last_av_message_id,
-                        chat_id=TelegramCommandHandler.last_av_chat_id
-                    )
-                except Exception:
-                    TelegramCommandHandler.log_message(message="Failed to delete message!")
+                TelegramCommandHandler.delete_message(
+                    chat_id=TelegramCommandHandler.last_av_chat_id,
+                    message_id=TelegramCommandHandler.last_av_message_id
+                )
 
             # record id of current message
             if new_av_chat_id is not None and new_av_message_id is not None:
@@ -671,7 +681,8 @@ class TelegramCommandHandler:
                 chat_id=chat_id,
                 text=f"✅ The new list will be released after {
                     TelegramCommandHandler.auto_reg_system.release_time_manager.release_time_to_str(
-                        time_manager=TelegramCommandHandler.time_manager)
+                        time_manager=TelegramCommandHandler.time_manager
+                    )
                 }"
             )
         else:
@@ -739,6 +750,15 @@ class TelegramCommandHandler:
                 interval=Config.repeating_interval_for_release,
                 name=Config.job_name_for_release,
             )
+
+    @staticmethod
+    def run_job_for_deleting_messages(context: ContextTypes.DEFAULT_TYPE):
+        TelegramCommandHandler.remove_jobs(name=Config.job_name_for_deleting, context=context)
+        context.job_queue.run_repeating(
+            callback=TelegramCommandHandler.attempt_delete_message,
+            interval=Config.repeating_interval_for_deleting,
+            name=Config.job_name_for_deleting,
+        )
 
     @staticmethod
     async def run_notitime(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -898,7 +918,7 @@ class TelegramCommandHandler:
         try:
             file = TelegramCommandHandler.auto_reg_system.handle_history(
                 username=update.effective_user.username,
-                history_file_name=Config.history_file_name
+                tracer=TelegramCommandHandler.tracer
             )
             await update.message.reply_document(document=file)
         except Exception:

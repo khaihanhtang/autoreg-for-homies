@@ -1,5 +1,4 @@
 from datetime import datetime
-import pytz
 from pytz.tzinfo import StaticTzInfo
 
 
