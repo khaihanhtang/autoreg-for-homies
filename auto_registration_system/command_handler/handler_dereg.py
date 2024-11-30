@@ -28,7 +28,7 @@ class DeregHandler:
                 count_processed += 1
                 try:
                     index = int(name) - 1
-                    if index < 0 or index >= slot.max_num_players:
+                    if index < 0 or index >= slot.num_players:
                         response += f"Position {index + 1} is not valid\\!\n"
                     elif index >= len(slot.players) or slot.players[index] == "":
                         response += f"Position {index + 1} has been removed or does not exist\\!\n"
@@ -46,7 +46,7 @@ class DeregHandler:
                     if not found:
                         for i, reservation in enumerate(slot.reservations):
                             if reservation.name == name:
-                                slot.reservations[i] = Reservation(name="", is_playable=False)
+                                slot.reservations[i] = Reservation(name="", is_pending=False)
                                 found = True
                                 break
                     if found:

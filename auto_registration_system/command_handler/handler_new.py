@@ -59,7 +59,7 @@ class NewHandler:
             return False
 
     @staticmethod
-    def handle(message: str, data: RegistrationData) -> bool:
+    def handle(message: str, data: RegistrationData, max_num_players: int) -> bool:
         message = StringParser.remove_command(message=message)
         current_date_venue: str or None = None
         current_slot_label: str or None = None
@@ -71,11 +71,12 @@ class NewHandler:
                 current_date_venue = StringParser.remove_first_word(message=current_message)
                 data.insert_date_venue(date_venue=current_date_venue)
             elif NewHandler.is_slot_line(message=current_message):
+                kept_message = current_message
                 current_slot_label = NewHandler.get_slot_label(message=current_message)
                 current_message = StringParser.remove_first_word(message=current_message)
 
                 try:
-                    max_num_players = int(StringParser.get_last_word(message=current_message))
+                    num_players = int(StringParser.get_last_word(message=current_message))
                     current_message = StringParser.remove_last_word(message=current_message)
                 except Exception:
                     raise ErrorMaker.make_syntax_error_exception(message=line)
@@ -98,11 +99,17 @@ class NewHandler:
                 if current_date_venue is None:
                     raise ErrorMaker.make_dv_not_found_exception(message=line)
 
+                if num_players > max_num_players:
+                    raise ErrorMaker.make_num_players_exceeding_maximum_allowed_exception(
+                        message=kept_message,
+                        max_num_players=max_num_players
+                    )
+
                 data.insert_slot(
                     date_venue=current_date_venue,
                     slot_label=current_slot_label,
                     slot_name=current_message,
-                    max_num_players=max_num_players
+                    num_players=num_players
                 )
             elif NewHandler.is_player_line(message=current_message):
                 current_player_label: str = NewHandler.get_player_label(message=current_message)

@@ -11,7 +11,7 @@ class AvHandler:
         for date_venue in data.bookings_by_date_venue:
             slot_container = dict()
             for slot_label, slot in data.bookings_by_date_venue[date_venue].items():
-                if len(slot.players) < slot.max_num_players:
+                if len(slot.players) < slot.num_players:
                     slot_container[slot_label] = slot
             if slot_container:
                 res.bookings_by_date_venue[date_venue] = slot_container

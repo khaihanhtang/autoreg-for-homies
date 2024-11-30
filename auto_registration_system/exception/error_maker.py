@@ -67,3 +67,7 @@ class ErrorMaker:
     @staticmethod
     def make_time_list_invalid_exception() -> Exception:
         return Exception(f"Time list must be strictly decreasing and has all positive integers!")
+
+    @staticmethod
+    def make_num_players_exceeding_maximum_allowed_exception(message: str, max_num_players: int) -> Exception:
+        return Exception(f"At line '{message}', number of players exceeds {max_num_players}.")

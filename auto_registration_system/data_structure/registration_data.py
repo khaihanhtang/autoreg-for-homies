@@ -18,13 +18,13 @@ class RegistrationData:
             raise ErrorMaker.make_dv_conflict_exception(message=date_venue)
         self._bookings_by_date_venue[date_venue]: dict = {}
 
-    def insert_slot(self, date_venue: str, slot_label: str, slot_name: str, max_num_players: int):
+    def insert_slot(self, date_venue: str, slot_label: str, slot_name: str, num_players: int):
         if date_venue not in self._bookings_by_date_venue:
             raise ErrorMaker.make_dv_not_found_exception(message=date_venue)
         if slot_label in self._bookings_by_date_venue[date_venue]:
             raise ErrorMaker.make_slot_conflict_exception(message=slot_label)
         self._bookings_by_date_venue[date_venue][slot_label]: SlotManager = SlotManager(
-            slot_name=slot_name, max_num_players=max_num_players
+            slot_name=slot_name, num_players=num_players
         )
 
     def get_slot(self, slot_label) -> SlotManager or None:

@@ -116,7 +116,11 @@ class AutoRegistrationSystem:
 
         temp_data = RegistrationData()
         try:
-            response = NewHandler.handle(message=message, data=temp_data)
+            response = NewHandler.handle(
+                message=message,
+                data=temp_data,
+                max_num_players=Config.max_num_players_per_slot
+            )
             if response:
                 if is_in_main_group:
                     self._data = temp_data
