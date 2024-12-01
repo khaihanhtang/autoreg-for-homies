@@ -123,13 +123,13 @@ class NewHandler:
                 if len(current_message) > 0:
                     if current_player_label == Term.RESERVATION:
                         last_word: str = StringParser.get_last_word(message=current_message)
-                        if last_word == Term.PLAYABLE:
+                        if last_word == Term.PENDING:
                             current_message = StringParser.remove_last_word(message=current_message)
                             if len(current_message) > 0:
                                 data.reserve_player(
                                     slot_label=current_slot_label,
                                     player=current_message.title(),
-                                    is_playable=True
+                                    is_pending=True
                                 )
                         else:
                             data.reserve_player(
@@ -145,5 +145,4 @@ class NewHandler:
         if count_processed == 0:
             return False
 
-        data.move_all_playable_players()
         return True

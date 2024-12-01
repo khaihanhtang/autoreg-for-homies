@@ -35,8 +35,6 @@ class RegHandler:
         if count_processed == 0:
             return "There is nothing changed!", None, slot_label
 
-        data.move_all_playable_players()
-
         if len(conflict_names) == 0:
             return response, None, slot_label
         return response, conflict_names, slot_label

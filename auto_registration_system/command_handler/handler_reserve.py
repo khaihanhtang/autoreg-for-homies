@@ -30,6 +30,4 @@ class ReserveHandler:
         if count_processed == 0:
             return "There is nothing changed!"
 
-        data.move_all_playable_players()
-
         return response

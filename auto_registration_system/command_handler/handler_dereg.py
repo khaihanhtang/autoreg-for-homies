@@ -68,11 +68,9 @@ class DeregHandler:
                 new_reservations.append(reservation)
         slot.players = new_players
         slot.reservations = new_reservations
-        slot.move_all_playable_players()
+        slot.restructure()
         if count_processed == 0:
             return "There is nothing changed\\!"
-
-        data.move_all_playable_players()
 
         return response
 

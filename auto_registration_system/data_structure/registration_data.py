@@ -40,12 +40,12 @@ class RegistrationData:
             return
         raise ErrorMaker.make_slot_not_found_exception(message=slot_label)
 
-    def reserve_player(self, slot_label: str, player: str, is_playable: bool = False):
+    def reserve_player(self, slot_label: str, player: str, is_pending: bool = False):
         slot = self.get_slot(slot_label=slot_label)
         if slot is not None:
             slot.reserve(
                 proposed_name=player,
-                is_playable=is_playable
+                is_pending=is_pending
             )
             return
         raise ErrorMaker.make_slot_not_found_exception(message=slot_label)
@@ -57,10 +57,10 @@ class RegistrationData:
     #         return
     #     raise ErrorMaker.make_slot_not_found_exception(message=slot_label)
 
-    def move_all_playable_players(self):
+    def restructure(self):
         for date_venue in self._bookings_by_date_venue:
             for slot_label in self._bookings_by_date_venue[date_venue]:
-                self._bookings_by_date_venue[date_venue][slot_label].move_all_playable_players()
+                self._bookings_by_date_venue[date_venue][slot_label].restructure()
 
     def collect_slot_labels_involving_user(self, id_string: str) -> list[str]:
         res: list[str] = list()

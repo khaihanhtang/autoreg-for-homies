@@ -67,7 +67,7 @@ class TelegramCommandHandler:
     COMMAND_DRG = "drg"
     COMMAND_ADMIN = "admin"
     COMMAND_AV = "av"
-    COMMAND_ALLPLAYABLE = "allplayable"
+    COMMAND_ALLPENDING = "allpending"
     COMMAND_LOCK = "lock"
     COMMAND_UNLOCK = "unlock"
     COMMAND_HELP = "help"
@@ -881,10 +881,10 @@ class TelegramCommandHandler:
         await TelegramCommandHandler.reply_message(update=update, text="Incorrect command/syntax!")
 
     @staticmethod
-    async def run_allplayable(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def run_allpending(update: Update, context: ContextTypes.DEFAULT_TYPE):
         TelegramCommandHandler.log_message_from_user(update=update)
 
-        message = TelegramCommandHandler.auto_reg_system.handle_allplayable(
+        message = TelegramCommandHandler.auto_reg_system.handle_allpending(
             username=update.effective_user.username,
             chat_id=update.message.chat_id
         )

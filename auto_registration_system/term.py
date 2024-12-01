@@ -3,5 +3,5 @@ class Term:
     DATE_VENUE_SHORTENED = "dv"
     NUM_PLAYERS = "#players:"
     RESERVATION = "reserve"
-    PLAYABLE = "(pending)"
+    PENDING = "(pending)"
     INDENT_SPACE = "   "

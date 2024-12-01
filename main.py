@@ -72,8 +72,8 @@ def main() -> (Application[
         CommandHandler(command=TelegramCommandHandler.COMMAND_AV, callback=TelegramCommandHandler.run_av)
     )
     to_be_returned_app.add_handler(
-        CommandHandler(command=TelegramCommandHandler.COMMAND_ALLPLAYABLE,
-                       callback=TelegramCommandHandler.run_allplayable)
+        CommandHandler(command=TelegramCommandHandler.COMMAND_ALLPENDING,
+                       callback=TelegramCommandHandler.run_allpending)
     )
     to_be_returned_app.add_handler(
         CommandHandler(command=TelegramCommandHandler.COMMAND_LOCK, callback=TelegramCommandHandler.run_lock)

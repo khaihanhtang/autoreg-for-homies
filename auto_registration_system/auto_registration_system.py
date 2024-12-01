@@ -3,8 +3,8 @@ from typing import BinaryIO
 from telegram import MessageEntity
 
 from auto_registration_system.command_handler.handler_aka import AkaHandler
+from auto_registration_system.command_handler.handler_allplayable import AllpendingHandler
 from auto_registration_system.data_structure.chat_manager import ChatManager
-from auto_registration_system.command_handler.handler_allplayable import AllplayableHandler
 from auto_registration_system.command_handler.handler_av import AvHandler
 from auto_registration_system.command_handler.handler_dereg import DeregHandler
 from auto_registration_system.command_handler.handler_reg import RegHandler
@@ -225,7 +225,7 @@ class AutoRegistrationSystem:
     def get_admin_list_as_string(self) -> str:
         return str(self._admin_manager.admins)
 
-    def handle_allplayable(self, username: str, chat_id: int) -> str:
+    def handle_allpending(self, username: str, chat_id: int) -> str:
         try:
             ChatManager.enforce_chat_id(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids)
             self._admin_manager.enforce_admin(username=username)
@@ -233,7 +233,7 @@ class AutoRegistrationSystem:
             return repr(e)
 
         try:
-            return AllplayableHandler.handle(data=self._data)
+            return AllpendingHandler.handle(data=self._data)
         except Exception as e:
             return repr(e)
 
