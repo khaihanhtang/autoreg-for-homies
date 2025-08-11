@@ -16,14 +16,14 @@ class RegistrationData:
     def insert_date_venue(self, date_venue: str):
         if date_venue in self._bookings_by_date_venue:
             raise ErrorMaker.make_dv_conflict_exception(message=date_venue)
-        self._bookings_by_date_venue[date_venue]: dict = {}
+        self._bookings_by_date_venue[date_venue] = {}
 
     def insert_slot(self, date_venue: str, slot_label: str, slot_name: str, num_players: int):
         if date_venue not in self._bookings_by_date_venue:
             raise ErrorMaker.make_dv_not_found_exception(message=date_venue)
         if slot_label in self._bookings_by_date_venue[date_venue]:
             raise ErrorMaker.make_slot_conflict_exception(message=slot_label)
-        self._bookings_by_date_venue[date_venue][slot_label]: SlotManager = SlotManager(
+        self._bookings_by_date_venue[date_venue][slot_label] = SlotManager(
             slot_name=slot_name, num_players=num_players
         )
 
