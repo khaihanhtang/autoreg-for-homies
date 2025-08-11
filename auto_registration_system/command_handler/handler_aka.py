@@ -9,7 +9,7 @@ class AkaHandler:
 
     @staticmethod
     def _parse_admin_case(message: str, command_string: str, message_entity: MessageEntity) \
-            -> (int, str, str):    # id, full_name, alias
+            -> tuple[int, str, str]:    # id, full_name, alias
         if not message[len(command_string) + 1:message_entity.offset].isspace():
             raise ErrorMaker.make_syntax_error_exception(message=message)
         raw_alias: str = message[message_entity.offset + message_entity.length:]
@@ -22,7 +22,7 @@ class AkaHandler:
 
     @staticmethod
     def _parse_user_case(sender_id: int, sender_full_name: str, message: str) \
-            -> (int, str, str):  # id, full_name, alias
+            -> tuple[int, str, str]:  # id, full_name, alias
         raw_alias: str = StringParser.remove_command(message=message)
         if ',' in raw_alias:
             raise ErrorMaker.make_message_containing_comma_exception(message=message)
