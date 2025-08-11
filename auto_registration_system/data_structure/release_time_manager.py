@@ -6,11 +6,11 @@ from auto_registration_system.exception.error_maker import ErrorMaker
 
 class ReleaseTimeManager:
     def __init__(self):
-        self._release_time: datetime or None = None
+        self._release_time: datetime | None = None
         self._enabled: bool = False
 
     @property
-    def release_time(self) -> datetime or None:
+    def release_time(self) -> datetime | None:
         return self._release_time
 
     @property
@@ -37,8 +37,8 @@ class ReleaseTimeManager:
             return True
         return False
 
-    def release_time_to_str(self, time_manager: TimeManager) -> str or None:
+    def release_time_to_str(self, time_manager: TimeManager) -> str | None:
         return time_manager.datetime_to_str(datetime_val=self.release_time)
 
-    def release_time_to_str_with_input_time_format(self, time_manager: TimeManager) -> str or None:
+    def release_time_to_str_with_input_time_format(self, time_manager: TimeManager) -> str | None:
         return time_manager.datetime_to_str_with_input_time_format(datetime_val=self.release_time)

@@ -113,7 +113,7 @@ class TelegramCommandHandler:
     async def reply_message(
             update: Update,
             text: str,
-            parse_mode: ParseMode or None = None,
+            parse_mode: ParseMode | None = None,
             reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply | None = None,
     ):
         try:
@@ -137,7 +137,7 @@ class TelegramCommandHandler:
             context: ContextTypes.DEFAULT_TYPE,
             chat_id: int,
             text: str,
-            parse_mode: ParseMode or None = None,
+            parse_mode: ParseMode | None = None,
             reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply | None = None,
     ):
         try:
@@ -487,10 +487,10 @@ class TelegramCommandHandler:
 
     @staticmethod
     async def write_data_and_update_bot_message_for_full_list(
-            update: Update or None,
+            update: Update | None,
             context: ContextTypes.DEFAULT_TYPE,
-            message: str or None,
-            parse_mode: ParseMode or None = None,
+            message: str | None,
+            parse_mode: ParseMode | None = None,
             is_main_data: bool = True,
     ):
         all_slots_as_string = TelegramCommandHandler.auto_reg_system.get_all_slots_as_string(is_main_data=is_main_data)
@@ -774,7 +774,7 @@ class TelegramCommandHandler:
         )
 
     @staticmethod
-    async def run_reg(update: Update, context: ContextTypes.DEFAULT_TYPE, effective_user: str or None = None):
+    async def run_reg(update: Update, context: ContextTypes.DEFAULT_TYPE, effective_user: str | None = None):
         TelegramCommandHandler.log_message_from_user(update=update)
 
         if effective_user is None:
@@ -800,7 +800,7 @@ class TelegramCommandHandler:
             )
 
     @staticmethod
-    async def run_reserve(update: Update, context: ContextTypes.DEFAULT_TYPE, effective_user: str or None = None):
+    async def run_reserve(update: Update, context: ContextTypes.DEFAULT_TYPE, effective_user: str | None = None):
         TelegramCommandHandler.log_message_from_user(update=update)
 
         if effective_user is None:
@@ -818,7 +818,7 @@ class TelegramCommandHandler:
         )
 
     @staticmethod
-    async def run_dereg(update: Update, context: ContextTypes.DEFAULT_TYPE, effective_user: User or None = None):
+    async def run_dereg(update: Update, context: ContextTypes.DEFAULT_TYPE, effective_user: User | None = None):
         TelegramCommandHandler.log_message_from_user(update=update)
 
         if effective_user is None:

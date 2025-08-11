@@ -2,7 +2,7 @@ class DeletionQueue:
 
     def __init__(self):
         # self._file_name_deletion_queue: str = file_name_deletion_queue
-        self._deletion_queue: list[(int, int)] | None = None
+        self._deletion_queue: list[tuple[int, int]] | None = None
         self._current_index: int = 0
 
     def enqueue(self, chat_id: int, message_id):
@@ -11,7 +11,7 @@ class DeletionQueue:
 
         self._deletion_queue.append((chat_id, message_id))
 
-    def dequeue(self) -> (bool, (int, int)):
+    def dequeue(self) -> tuple[bool, tuple[int, int]]:
         if self._deletion_queue is None:
             return False, (0, 0)
 

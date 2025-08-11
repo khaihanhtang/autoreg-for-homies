@@ -29,8 +29,8 @@ from tracer import Tracer
 class AutoRegistrationSystem:
 
     def __init__(self, admins: set[str], identity_manager: IdentityManager, time_manager: TimeManager):
-        self._data: RegistrationData or None = None
-        self._pre_released_data: RegistrationData or None = None
+        self._data: RegistrationData | None = None
+        self._pre_released_data: RegistrationData | None = None
         self._admin_manager: AdminManager = AdminManager(admins=admins)
         self._lock_manager: LockManager = LockManager(locked=False)
         self._identity_manager: IdentityManager = identity_manager
@@ -49,7 +49,7 @@ class AutoRegistrationSystem:
             return True
         return False
 
-    def update_reminder(self, time_manager: TimeManager) -> (bool, int):
+    def update_reminder(self, time_manager: TimeManager) -> tuple[bool, int]:
         return self._reminder.update_pointer(
             time_manager=time_manager,
             release_time=self._release_time_manager.release_time
@@ -68,7 +68,7 @@ class AutoRegistrationSystem:
         return self._identity_manager
 
     @staticmethod
-    def convert_registrations_to_string(data: RegistrationData or None) -> str or None:
+    def convert_registrations_to_string(data: RegistrationData | None) -> str | None:
         if data is None:
             return None
         res = ""
@@ -79,7 +79,7 @@ class AutoRegistrationSystem:
         return res
 
     @staticmethod
-    def convert_counts_from_available_slots_to_string(data: RegistrationData) -> str or None:
+    def convert_counts_from_available_slots_to_string(data: RegistrationData) -> str | None:
         if data is None:
             return None
         res = ""
@@ -107,7 +107,7 @@ class AutoRegistrationSystem:
             except Exception:
                 raise ErrorMaker.make_admin_permission_error_exception()
 
-    def handle_new(self, username: str, message: str, chat_id: int) -> (str, bool):
+    def handle_new(self, username: str, message: str, chat_id: int) -> tuple[str, bool]:
         is_in_main_group = ChatManager.is_chat_id_allowed(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids)
         try:
             self._admin_manager.enforce_admin(username=username)
@@ -131,7 +131,7 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e), is_in_main_group
 
-    def handle_notitime(self, username: str, message: str, time_manager: TimeManager) -> (bool, str):
+    def handle_notitime(self, username: str, message: str, time_manager: TimeManager) -> tuple[bool, str]:
         try:
             self._admin_manager.enforce_admin(username=username)
             message = StringParser.remove_command(message=message)
@@ -152,7 +152,7 @@ class AutoRegistrationSystem:
         except Exception as e:
             return False, repr(e)
 
-    def get_all_slots_as_string(self, is_main_data: bool = True) -> str or None:
+    def get_all_slots_as_string(self, is_main_data: bool = True) -> str | None:
         data = self._data
         if not is_main_data:
             data = self._pre_released_data
@@ -176,7 +176,7 @@ class AutoRegistrationSystem:
         )
 
     def handle_register(self, command_string_for_suggestion: str, username: str, message: str, chat_id: int) \
-            -> (str, str or None):
+            -> tuple[str, str | None]:
         try:
             self._lock_manager.enforce_system_unlocked(username=username, admin_manager=self._admin_manager)
             ChatManager.enforce_chat_id(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids)

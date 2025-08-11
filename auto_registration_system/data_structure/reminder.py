@@ -40,7 +40,7 @@ class Reminder:
                 res = i
         return res
 
-    def update_pointer(self, time_manager: TimeManager, release_time: datetime) -> (bool, int):
+    def update_pointer(self, time_manager: TimeManager, release_time: datetime) -> tuple[bool, int]:
         is_updated: bool = False
         to_be_reminded_minutes_left: int = -1
         try:

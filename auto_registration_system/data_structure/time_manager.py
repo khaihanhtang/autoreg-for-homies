@@ -17,19 +17,19 @@ class TimeManager:
     def input_time_format(self) -> str:
         return self._input_time_format
 
-    def str_to_datetime(self, datetime_str: str) -> datetime or None:
+    def str_to_datetime(self, datetime_str: str) -> datetime | None:
         try:
             return self._time_zone.localize(datetime.strptime(datetime_str, self._input_time_format))
         except Exception:
             return None
 
-    def datetime_to_str(self, datetime_val: datetime) -> str or None:
+    def datetime_to_str(self, datetime_val: datetime) -> str | None:
         try:
             return f"{datetime_val.strftime(self._output_time_format)} {datetime_val.tzinfo}"
         except Exception:
             return None
 
-    def datetime_to_str_with_input_time_format(self, datetime_val: datetime) -> str or None:
+    def datetime_to_str_with_input_time_format(self, datetime_val: datetime) -> str | None:
         try:
             return datetime_val.strftime(self._input_time_format)
         except Exception:

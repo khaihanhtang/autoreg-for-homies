@@ -27,7 +27,7 @@ class RegistrationData:
             slot_name=slot_name, num_players=num_players
         )
 
-    def get_slot(self, slot_label) -> SlotManager or None:
+    def get_slot(self, slot_label) -> SlotManager | None:
         for date_venue in self._bookings_by_date_venue:
             if slot_label in self._bookings_by_date_venue[date_venue]:
                 return self._bookings_by_date_venue[date_venue][slot_label]

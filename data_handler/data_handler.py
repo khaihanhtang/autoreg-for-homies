@@ -62,7 +62,7 @@ class DataHandler:
             else:
                 text_file.write("")
 
-    def read_data_from_files(self) -> (str, str, str):
+    def read_data_from_files(self) -> tuple[str, str, str]:
         main_list_as_str: str | None = None
         release_time_as_str: str | None = None
         pre_released_list_as_str: str | None = None

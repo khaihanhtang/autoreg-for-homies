@@ -8,10 +8,17 @@ from auto_registration_system.command import Command
 import logging
 
 
-def main() -> (Application[
-    ExtBot[None], CallbackContext[ExtBot[None], dict, dict, dict], dict, dict, dict, JobQueue[
-        CallbackContext[ExtBot[None], dict, dict, dict]]],
-               logging.Logger):
+def main() -> tuple[
+        Application[
+            ExtBot[None], 
+            CallbackContext[ExtBot[None], dict, dict, dict], 
+            dict, 
+            dict, 
+            dict, 
+            JobQueue[CallbackContext[ExtBot[None], dict, dict, dict]]
+        ], 
+        logging.Logger
+    ]:
     TelegramCommandHandler.initialize()
 
     token: str = input("Enter bot token: ")

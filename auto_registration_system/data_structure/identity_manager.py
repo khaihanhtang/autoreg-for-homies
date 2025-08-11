@@ -32,7 +32,7 @@ class IdentityManager:
             return full_name
         return alias
 
-    def get_alias(self, telegram_id: int) -> str or None:
+    def get_alias(self, telegram_id: int) -> str | None:
         if telegram_id in self._id_to_alias:
             return self._id_to_alias[telegram_id]
         return None

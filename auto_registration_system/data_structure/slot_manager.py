@@ -43,7 +43,7 @@ class SlotManager:
     def non_pending_reservations(self, non_pending_reservation: list[str]):
         self._non_pending_reservations = non_pending_reservation
 
-    def _pop_first_pending_player(self) -> str or None:
+    def _pop_first_pending_player(self) -> str | None:
         if self._pending_reservations:
             return self._pending_reservations.pop(0)
         return None
