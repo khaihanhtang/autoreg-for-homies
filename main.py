@@ -108,9 +108,12 @@ def main() -> tuple[
 
 if __name__ == "__main__":
     app: Application[
-             ExtBot[None],
-             CallbackContext[ExtBot[None], dict, dict, dict],
-             dict, dict, dict, JobQueue[CallbackContext[ExtBot[None], dict, dict, dict]]] | None = None
+        ExtBot[None],
+        CallbackContext[ExtBot[None], dict, dict, dict],
+        dict, dict, dict, JobQueue[
+            CallbackContext[ExtBot[None], dict, dict, dict]
+        ]
+    ] | None = None
     logger: logging.Logger | None = None
     try:
         # deletion_queue: DeletionQueue = DeletionQueue("abc.txt")
