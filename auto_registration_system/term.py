@@ -5,8 +5,11 @@ class Term:
     DATE_VENUE = "[dv]"
     DATE_VENUE_SHORTENED = "dv"
     NUM_PLAYERS = "#players:"
+    OWNER = "owner:"
     RESERVATION = "reserve"
     PENDING = "(pending)"
+    PAYMENT_PAID = "(paid)"
+    PAYMENT_PENDING = "(pending payment)"
     INDENT_SPACE = "   "
     HELP_TEXT = f"""
     Please use the following syntaxes:

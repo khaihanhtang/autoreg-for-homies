@@ -338,8 +338,7 @@ class TelegramCommandHandler:
             inline_button_list = InlineKeyboardMarkup(inline_keyboard=button_list)
         else:
             response += (f"There is no slot for {clickable_link_for_telegram_id} "
-                         + f"\\(with name/alias {StringParser
-                         .replace_escape_characters_for_markdown(alias_or_full_name)}\\) to deregister\\!")
+                         + f"\\(with name/alias {StringParser.replace_escape_characters_for_markdown(alias_or_full_name)}\\) to deregister\\!")
 
         await TelegramCommandHandler.send_message(
             context=context,

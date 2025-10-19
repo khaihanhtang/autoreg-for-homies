@@ -1,5 +1,8 @@
+from typing import Optional
+
 from ..exception.error_maker import ErrorMaker
 from .slot_manager import SlotManager
+from auto_registration_system.model import SlotDetail
 
 
 class RegistrationData:
@@ -12,6 +15,27 @@ class RegistrationData:
 
     def reset(self):
         self._bookings_by_date_venue = dict()
+
+    def insert_slot_detail(self, slot_detail: SlotDetail):
+        """Insert a slot detail into the registration data structure.
+        This method combines insert_date_venue and insert_slot for convenience."""
+        date_venue = slot_detail.date_venue
+        slot_label = slot_detail.slot_label
+        num_players = slot_detail.num_players
+        owner = slot_detail.owner
+
+        # TODO: inverse the index so that we can find the slot detail by label directly
+
+        if date_venue not in self._bookings_by_date_venue:
+            self._bookings_by_date_venue[date_venue] = {}
+
+        if slot_label in self._bookings_by_date_venue[date_venue]:
+            raise ErrorMaker.make_slot_conflict_exception(message=slot_label)
+
+        self._bookings_by_date_venue[date_venue][slot_label] = SlotManager(
+            slot_name=slot_label, num_players=num_players, owner=owner
+        )
+
 
     def insert_date_venue(self, date_venue: str):
         if date_venue in self._bookings_by_date_venue:
@@ -27,13 +51,17 @@ class RegistrationData:
             slot_name=slot_name, num_players=num_players
         )
 
-    def get_slot(self, slot_label) -> SlotManager or None:
+    def get_slot(self, slot_label) -> Optional[SlotManager]:
+        """Return the slot with the given label, or None if not found."""
         for date_venue in self._bookings_by_date_venue:
             if slot_label in self._bookings_by_date_venue[date_venue]:
                 return self._bookings_by_date_venue[date_venue][slot_label]
         return None
 
     def register_player(self, slot_label: str, player: str):
+        """Register a player to the slot with the given label.
+        If the slot is already full, player will be added to the reserve list.
+        If the slot is not found, raise an exception."""
         slot = self.get_slot(slot_label=slot_label)
         if slot is not None:
             slot.register(proposed_name=player)
@@ -59,6 +87,7 @@ class RegistrationData:
             for slot_label in self._bookings_by_date_venue[date_venue]:
                 self._bookings_by_date_venue[date_venue][slot_label].restructure()
 
+    #FIXME: unused
     def collect_slot_labels_involving_user(self, id_string: str) -> list[str]:
         res: list[str] = list()
         for date_venue in self._bookings_by_date_venue:

@@ -5,7 +5,7 @@ __pycache__/
 
 # C extensions
 *.so
-*.txt
+
 # Distribution / packaging
 .Python
 build/
@@ -163,6 +163,7 @@ cython_debug/
 
 *.md
 !README.md
+!requirements*.txt
 
 *.json
 

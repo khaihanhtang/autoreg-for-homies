@@ -1,0 +1,8 @@
+# Testing dependencies
+pytest>=6.0.0
+pytest-cov>=4.0.0
+
+# Add your project dependencies here if any
+# For example:
+# requests>=2.25.0
+# flask>=2.0.0

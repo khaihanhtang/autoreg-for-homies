@@ -1,5 +1,5 @@
 from ..exception.error_maker import ErrorMaker
-
+from auto_registration_system.model import User
 
 class AdminManager:
 
@@ -15,6 +15,8 @@ class AdminManager:
             return True
         return False
 
-    def enforce_admin(self, username: str):
+    def enforce_admin(self, username: str) -> User:
+        """Check if the user is admin and return a User"""
         if not self.is_admin(username=username):
             raise ErrorMaker.make_admin_permission_error_exception()
+        return User(username, "", is_admin=True)

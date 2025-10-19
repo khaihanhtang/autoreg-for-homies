@@ -1,5 +1,61 @@
 This is the source code for auto-registering badminton slots, dedicated to badminton group Homies. This source code requires running on a server to handle requests from users via a Telegram bot.
 
+## Testing & CI/CD
+
+This project uses pytest for testing and GitHub Actions for continuous integration.
+
+### Running Tests Locally
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run all tests
+pytest tests/ -v
+
+# Run tests with coverage
+pytest tests/ --cov=auto_registration_system --cov-report=term-missing
+
+# Run specific test
+pytest tests/test_slot_manager.py::TestSlotManager::test_initialization -v
+```
+
+### GitHub Actions Workflows
+
+The project includes an automated CI/CD pipeline:
+
+- **CI/CD Pipeline** (`.github/workflows/ci.yml`): 
+  - Runs tests on Python 3.12 (Ubuntu)
+  - Performs code quality checks with flake8 (syntax errors, undefined names, complexity analysis)
+  - Includes project structure verification
+  - Caches pip packages for faster builds
+  - Note: Coverage reporting is configured but currently skipped due to Python version mismatch
+  - Triggers on pushes and pull requests to `main` and `develop` branches
+
+### Development Setup
+
+```bash
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Run tests with coverage locally
+pytest tests/ --cov=auto_registration_system --cov=data_handler --cov=string_parser --cov=telegram_adapter --cov-report=term-missing
+
+# Lint code (same checks as CI)
+flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+```
+
+Note: The CI currently has Black and isort formatting checks disabled. To enable code formatting:
+
+```bash
+# Format code (optional - not currently enforced by CI)
+black .
+
+# Sort imports (optional - not currently enforced by CI)
+isort .
+```
+
 ## License
 This source code [autoreg-for-homies](https://github.com/khaihanhtang/autoreg-for-homies) is licensed under [Apache License 2.0](https://github.com/khaihanhtang/autoreg-for-homies/blob/main/LICENSE).
 

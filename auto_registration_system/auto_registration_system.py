@@ -2,6 +2,7 @@ from typing import BinaryIO
 
 from telegram import MessageEntity
 
+from auto_registration_system.model import User
 from auto_registration_system.command_handler.handler_aka import AkaHandler
 from auto_registration_system.command_handler.handler_allplayable import AllpendingHandler
 from auto_registration_system.data_structure.chat_manager import ChatManager
@@ -110,13 +111,14 @@ class AutoRegistrationSystem:
     def handle_new(self, username: str, message: str, chat_id: int) -> (str, bool):
         is_in_main_group = ChatManager.is_chat_id_allowed(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids)
         try:
-            self._admin_manager.enforce_admin(username=username)
+            adminUser = self._admin_manager.enforce_admin(username=username)
         except Exception as e:
             return repr(e), is_in_main_group
-
+        
         temp_data = RegistrationData()
         try:
             response = NewHandler.handle(
+                user=adminUser,
                 message=message,
                 data=temp_data,
                 max_num_players=Config.max_num_players_per_slot

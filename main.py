@@ -6,6 +6,7 @@ from telegram_adapter.telegram_command_handler import TelegramCommandHandler
 from auto_registration_system.command import Command
 
 import logging
+import os
 
 
 def main() -> (Application[
@@ -14,7 +15,12 @@ def main() -> (Application[
                logging.Logger):
     TelegramCommandHandler.initialize()
 
-    token: str = input("Enter bot token: ")
+    if "TELEGRAM_BOT_TOKEN" in os.environ:
+        print("Found TELEGRAM_BOT_TOKEN in environment variables.")
+        token: str = os.environ["TELEGRAM_BOT_TOKEN"]
+    else:
+        token: str = input("Enter bot token: ")
+
     print(f"Please remember to run command /{Command.COMMAND_START}")
 
     to_be_returned_logger: logging.Logger = logging.getLogger(__name__)
