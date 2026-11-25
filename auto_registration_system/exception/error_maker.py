@@ -2,6 +2,7 @@ from auto_registration_system.exception.exception_name_conflict import NameConfl
 from auto_registration_system.exception.exception_syntax_error import SyntaxErrorException
 
 
+# Centralizes the validation exceptions and messages used by the command handlers.
 class ErrorMaker:
 
     @staticmethod

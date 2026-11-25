@@ -4,12 +4,14 @@ from auto_registration_system.exception.error_maker import ErrorMaker
 from auto_registration_system.data_structure.time_manager import TimeManager
 
 
+# Walks the configured lead times in descending order as the release approaches.
 class Reminder:
 
     def __init__(self, time_list: list[int], time_manager: TimeManager, release_time: datetime):
         if not Reminder.check_valid_time_list(time_list=time_list):
             raise ErrorMaker.make_time_list_invalid_exception()
         self._time_list: list[int] = time_list
+        # Starting or restoring a schedule skips reminders whose times have already passed.
         self._pointer: int = 1 + Reminder.determine_pointer(
             time_list=self._time_list,
             time_manager=time_manager,
@@ -49,6 +51,7 @@ class Reminder:
                 time_manager=time_manager,
                 release_time=release_time
             )
+            # If the timer was delayed, report the most recent crossed lead time once.
             while self._pointer < len(self._time_list) and minutes_left <= self._time_list[self._pointer]:
                 to_be_reminded_minutes_left = self._time_list[self._pointer]
                 self._pointer += 1

@@ -4,6 +4,7 @@ from ..data_structure.slot_manager import SlotManager
 from ..exception.error_maker import ErrorMaker
 
 
+# Removes players by numbered place in the active lineup or by name across all three lists.
 class DeregHandler:
     @staticmethod
     def handle(message: str, data: RegistrationData) -> str:
@@ -62,7 +63,7 @@ class DeregHandler:
                         response += f"{
                             StringParser.replace_escape_characters_for_markdown(name)
                         } does not exist in slot {slot_label}\\!\n"
-        # clean empty elements
+        # Remove marked entries after the whole command. Numbered removals use the original positions.
         new_players: list[str] = list()
         new_pending_reservations: list[str] = list()
         new_non_pending_reservations: list[str] = list()
@@ -78,6 +79,7 @@ class DeregHandler:
         slot.players = new_players
         slot.pending_reservations = new_pending_reservations
         slot.non_pending_reservations = new_non_pending_reservations
+        # Promote pending players once all requested places have been freed.
         slot.restructure()
         if count_processed == 0:
             return "There is nothing changed\\!"

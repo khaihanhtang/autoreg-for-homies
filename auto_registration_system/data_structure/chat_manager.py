@@ -1,6 +1,7 @@
 from auto_registration_system.exception.error_maker import ErrorMaker
 
 
+# Applies the configured chat allowlist to public operations.
 class ChatManager:
 
     @staticmethod

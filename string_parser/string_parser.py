@@ -5,6 +5,7 @@ from auto_registration_system.exception.exception_last_word_not_found import Las
 from auto_registration_system.exception.exception_first_word_not_found import FirstWordNotFoundException
 
 
+# Shared parsing rules for command text, player names and Telegram Markdown.
 class StringParser:
 
     @staticmethod
@@ -20,6 +21,7 @@ class StringParser:
 
     @staticmethod
     def remove_command(message: str) -> str:
+        # Strip the command from the first line and preserve the remaining lines for /new.
         current_message: str = message.strip()
         if len(current_message) == 0:
             return current_message
@@ -64,6 +66,7 @@ class StringParser:
 
     @staticmethod
     def split_names(message: str) -> list[str]:
+        # Normalize comma-separated names consistently for registration and lookup.
         res: list[str] = message.split(',')
         for i, name in enumerate(res):
             res[i] = StringParser.remove_redundant_spaces(name).title()

@@ -11,6 +11,7 @@ class AdminManager:
         return self._admins
 
     def is_admin(self, username: str) -> bool:
+        # The wildcard is a privileged internal value. Telegram commands pass the sender's username.
         if username in self._admins or username == "*":
             return True
         return False

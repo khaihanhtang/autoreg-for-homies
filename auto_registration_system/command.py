@@ -1,3 +1,4 @@
+# Shared Telegram command names and inline-button callback prefixes.
 class Command:
     COMMAND_START = "start"
     COMMAND_HELLO = "hello"
@@ -19,6 +20,7 @@ class Command:
     COMMAND_HISTORY = "history"
     COMMAND_AKA = "aka"
     COMMAND_RESET = "reset"
+    # Release controls and the current state summary.
     COMMAND_NOTITIME = "notitime"
     COMMAND_WEEKLYNOTITIME = "weeklynotitime"
     COMMAND_STATE = "state"

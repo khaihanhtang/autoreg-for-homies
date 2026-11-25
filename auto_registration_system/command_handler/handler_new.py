@@ -4,6 +4,7 @@ from ..exception.error_maker import ErrorMaker
 from ..term import Term
 
 
+# Parses the multiline /new format into a caller-supplied registration list.
 class NewHandler:
 
     @staticmethod
@@ -61,6 +62,7 @@ class NewHandler:
     @staticmethod
     def handle(message: str, data: RegistrationData, max_num_players: int) -> bool:
         message = StringParser.remove_command(message=message)
+        # Date/venue lines and slot headers set the context for the rows that follow.
         current_date_venue: str or None = None
         current_slot_label: str or None = None
         count_processed: int = 0
@@ -122,6 +124,7 @@ class NewHandler:
 
                 if len(current_message) > 0:
                     if current_player_label == Term.RESERVATION:
+                        # A pending reserve uses the signup path and can move into an open place.
                         last_word: str = StringParser.get_last_word(message=current_message)
                         if last_word == Term.PENDING:
                             current_message = StringParser.remove_last_word(message=current_message)

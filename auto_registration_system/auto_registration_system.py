@@ -27,6 +27,7 @@ from auto_registration_system.data_structure.reminder import Reminder
 from tracer import Tracer
 
 
+# Owns list and release state. The Telegram adapter handles message delivery and timers.
 class AutoRegistrationSystem:
 
     def __init__(self, admins: set[str], identity_manager: IdentityManager, time_manager: TimeManager):
@@ -48,6 +49,7 @@ class AutoRegistrationSystem:
     def attempt_release_data(self, time_manager: TimeManager) -> bool:
         if not self._release_time_manager.is_releasable(time_manager):
             return False
+        # If the staged list is absent, a weekly occurrence keeps the active list and advances the deadline.
         publish = self._release_time_manager.mode == ReleaseMode.ONCE or self._pre_released_data is not None
         if publish:
             self._data = self._pre_released_data
@@ -66,6 +68,7 @@ class AutoRegistrationSystem:
         return is_updated, minutes_left
 
     def next_release_check(self) -> datetime | None:
+        # A single timer wakes at the earliest pending reset, reminder, or release.
         release_time = self._release_time_manager.release_time
         if release_time is None:
             return None
@@ -77,6 +80,7 @@ class AutoRegistrationSystem:
         manager = self._release_time_manager
         if manager.release_time is None or manager.pre_release_reset_done or Config.pre_release_reset_minutes <= 0:
             return None
+        # A weekly reset becomes eligible once a replacement list is staged.
         if manager.mode == ReleaseMode.WEEKLY and self._pre_released_data is None:
             return None
         return manager.release_time - timedelta(minutes=Config.pre_release_reset_minutes)
@@ -84,10 +88,12 @@ class AutoRegistrationSystem:
     def attempt_pre_release_reset(self, time_manager: TimeManager) -> bool:
         reset_time = self._pre_release_reset_time()
         release_time = self._release_time_manager.release_time
+        # The preparation window begins at the configured lead time and ends at release.
         if reset_time is None or not reset_time <= time_manager.now() < release_time:
             return False
         self._reset_active_list()
         self._lock_manager.locked = False
+        # Save this marker with the schedule so a restart inside the window cannot repeat the reset.
         self._release_time_manager.pre_release_reset_done = True
         return True
 
@@ -143,6 +149,7 @@ class AutoRegistrationSystem:
             self._data.reset()
 
     def handle_all(self, username: str, chat_id: int):
+        # Members can view the active list in allowed chats. Admins can view the staged list elsewhere.
         try:
             ChatManager.enforce_chat_id(chat_id=chat_id, allowed_chat_ids=Config.allowed_chat_ids)
         except Exception:
@@ -159,6 +166,7 @@ class AutoRegistrationSystem:
             return repr(e), is_in_main_group
 
         try:
+            # Parse the whole list in a temporary object before replacing the active or staged list.
             temp_data = self._parse_list(message)
             if temp_data is not None:
                 if is_in_main_group:
@@ -181,6 +189,7 @@ class AutoRegistrationSystem:
 
     def handle_notitime(self, username: str, message: str, time_manager: TimeManager,
                         mode: ReleaseMode = ReleaseMode.ONCE) -> tuple[bool, str]:
+        # Both commands share one schedule. The Boolean tells the adapter whether to save and requeue it.
         manager = self._release_time_manager
         try:
             self._admin_manager.enforce_admin(username=username)
@@ -188,6 +197,7 @@ class AutoRegistrationSystem:
             if args and args[0].startswith("/"):
                 args = args[1:]
             if not args:
+                # A bare command cancels its own mode and leaves the other mode active.
                 if manager.mode != mode:
                     return False, f"/{mode} is already off."
                 manager.disable()
@@ -207,6 +217,7 @@ class AutoRegistrationSystem:
             return False, repr(e)
 
     def handle_state(self, time_manager: TimeManager) -> str:
+        # Any chat can request this summary of the lock, active list and next release.
         lock_status = "locked" if self._lock_manager.locked else "unlocked"
         has_list = self._data is not None and bool(self._data.bookings_by_date_venue)
         list_status = "has information" if has_list else "is empty"
@@ -232,6 +243,7 @@ class AutoRegistrationSystem:
         return res
 
     def write_all_data_to_files(self, data_handler: DataHandler, time_manager: TimeManager):
+        # Save the lists, lock and schedule as one snapshot so they represent the same update.
         data_handler.write_state({
             "locked": self._lock_manager.locked,
             "active_list": self._data.to_state() if self._data is not None else None,
@@ -242,6 +254,7 @@ class AutoRegistrationSystem:
     def load_saved_state(self, data_handler: DataHandler, time_manager: TimeManager) -> None:
         state = data_handler.read_state()
         if state is None:
+            # The older text files contain the lists and release time. Their initial lock state is unlocked.
             active_list, release_schedule, staged_list = data_handler.read_legacy_state()
             self._data = self._parse_list(active_list)
             self._pre_released_data = self._parse_list(staged_list)

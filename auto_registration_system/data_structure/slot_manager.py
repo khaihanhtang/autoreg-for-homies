@@ -2,6 +2,7 @@ from ..exception.error_maker import ErrorMaker
 from ..term import Term
 
 
+# Owns a slot's capacity, registered players and two kinds of reserves.
 class SlotManager:
 
     def __init__(self, slot_name: str, num_players: int):
@@ -48,8 +49,7 @@ class SlotManager:
             return self._pending_reservations.pop(0)
         return None
 
-    # sorting the lists, pending players will be moved to main players if possible,
-    # and pending players are placed before non-pending players
+    # Fill open places from the pending queue in arrival order.
     def restructure(self):
         while len(self._players) < self._num_players:
             player = self._pop_first_pending_player()
@@ -115,6 +115,7 @@ class SlotManager:
         self.restructure()
 
     def to_string(self, slot_label: str) -> str:
+        # The displayed list uses the same syntax that /new accepts.
         res = f"[{slot_label}] {self._slot_name}, {Term.NUM_PLAYERS} {self._num_players}\n"
         for i in range(self._num_players):
             res += f"{Term.INDENT_SPACE}{i + 1}."
@@ -145,6 +146,7 @@ class SlotManager:
 
     @classmethod
     def from_state(cls, state: dict) -> "SlotManager":
+        # Restore exact membership and order by copying the saved lists directly.
         slot = cls(slot_name=state["name"], num_players=state["capacity"])
         slot.players = list(state["players"])
         slot.pending_reservations = list(state["pending_reservations"])

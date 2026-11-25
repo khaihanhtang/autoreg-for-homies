@@ -3,6 +3,7 @@ from auto_registration_system.exception.error_maker import ErrorMaker
 from string_parser.string_parser import StringParser
 
 
+# Adds named players to the non-pending reserve list for the requested slot.
 class ReserveHandler:
     @staticmethod
     def handle(message: str, data: RegistrationData) -> str:

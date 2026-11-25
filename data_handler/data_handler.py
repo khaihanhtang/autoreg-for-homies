@@ -6,6 +6,7 @@ from auto_registration_system.data_structure.time_manager import TimeManager
 from tracer import Tracer
 
 
+# Stores the registration snapshot and locates the separate alias, log and history files.
 class DataHandler:
 
     def __init__(self, directory_data: str,
@@ -49,6 +50,7 @@ class DataHandler:
         return directory_data + "/" + file_name
 
     def write_state(self, state: dict) -> None:
+        # Sync the temporary file before atomically replacing the last complete snapshot.
         temporary_state_file = self._full_file_name_state + ".tmp"
         with open(temporary_state_file, "w", encoding="utf-8") as file:
             json.dump(state, file, ensure_ascii=False)
@@ -62,6 +64,7 @@ class DataHandler:
                 state = json.load(file)
         except FileNotFoundError:
             return None
+        # An invalid snapshot is a startup error. Legacy import is reserved for a missing snapshot.
         if not isinstance(state, dict):
             raise ValueError(f"Invalid saved state in {self._full_file_name_state}")
         return state
@@ -75,6 +78,7 @@ class DataHandler:
             return None
 
     def read_legacy_state(self) -> tuple[str | None, str | None, str | None]:
+        # Legacy text is read during startup until a registration snapshot exists.
         return (
             self._read_legacy_text(self._full_file_name_main_list),
             self._read_legacy_text(self._full_file_name_release_time),

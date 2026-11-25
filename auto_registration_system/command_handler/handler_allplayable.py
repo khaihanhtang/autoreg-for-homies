@@ -4,6 +4,7 @@ from auto_registration_system.data_structure.registration_data import Registrati
 class AllpendingHandler:
     @staticmethod
     def handle(data: RegistrationData) -> str:
+        # Append non-pending reserves after the existing queue, then fill open places.
         for date_venue in data.bookings_by_date_venue:
             for slot_label in data.bookings_by_date_venue[date_venue]:
                 slot = data.bookings_by_date_venue[date_venue][slot_label]

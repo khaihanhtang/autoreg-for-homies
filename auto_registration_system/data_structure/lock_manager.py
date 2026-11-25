@@ -16,5 +16,6 @@ class LockManager:
         self._locked = new_locked_value
 
     def enforce_system_unlocked(self, username: str, admin_manager: AdminManager):
+        # Admins can still edit registrations while the public list is locked.
         if not admin_manager.is_admin(username=username) and self._locked:
             raise ErrorMaker.make_system_locked_exception()

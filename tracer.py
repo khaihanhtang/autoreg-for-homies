@@ -4,6 +4,7 @@ from typing import BinaryIO
 from auto_registration_system.data_structure.time_manager import TimeManager
 
 
+# Writes activity logs and maintains the downloadable history used by /history.
 class Tracer:
 
     def __init__(self, file_name_log: str, file_name_history: str, time_manager: TimeManager):
@@ -13,6 +14,7 @@ class Tracer:
         self._time_manager = time_manager
 
     def log(self, message: str, is_history_required: bool = True):
+        # The history flag controls the second write. The activity log always receives the event.
         logging.info(msg=f"{message}")
         if is_history_required:
             with open(file=self._file_name_history, mode="a", encoding="utf-8") as f:
