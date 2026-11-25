@@ -1,6 +1,7 @@
 from auto_registration_system.command import Command
 
 
+# Tokens shared by the list parser and renderer, plus the text returned by /help.
 class Term:
     DATE_VENUE = "[dv]"
     DATE_VENUE_SHORTENED = "dv"

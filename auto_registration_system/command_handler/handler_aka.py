@@ -31,6 +31,7 @@ class AkaHandler:
     @staticmethod
     def handle(sender_id: int, sender_full_name: str, message: str,
                message_entities: dict[MessageEntity, str], identity_manager: IdentityManager) -> str:
+        # /aka reads or updates the sender's alias. Mention-based requests are rejected.
         if len(message_entities) >= 1:
             # message_entity = list(message_entities.keys())[0]
             # affected_id, affected_name, affected_alias = AkaHandler._parse_admin_case(

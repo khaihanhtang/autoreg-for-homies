@@ -2,6 +2,7 @@ from ..exception.error_maker import ErrorMaker
 from .slot_manager import SlotManager
 
 
+# Groups slots by date and venue. Each slot owns its player and reserve lists.
 class RegistrationData:
     def __init__(self):
         self._bookings_by_date_venue: dict[str, dict[str, SlotManager]] = dict()
@@ -14,6 +15,7 @@ class RegistrationData:
         self._bookings_by_date_venue = dict()
 
     def to_state(self) -> dict:
+        # Keep the date, venue and slot ordering when saving the list.
         return {
             date_venue: {label: slot.to_state() for label, slot in slots.items()}
             for date_venue, slots in self._bookings_by_date_venue.items()
@@ -21,6 +23,7 @@ class RegistrationData:
 
     @classmethod
     def from_state(cls, state: dict | None) -> "RegistrationData | None":
+        # A null entry represents an absent list. An empty mapping represents a list with no bookings.
         if state is None:
             return None
         data = cls()

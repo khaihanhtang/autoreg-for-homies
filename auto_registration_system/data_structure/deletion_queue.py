@@ -1,3 +1,4 @@
+# Keeps Telegram message IDs in memory until the periodic cleanup job processes them.
 class DeletionQueue:
 
     def __init__(self):

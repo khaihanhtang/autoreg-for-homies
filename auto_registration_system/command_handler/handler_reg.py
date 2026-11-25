@@ -4,6 +4,7 @@ from auto_registration_system.exception.exception_name_conflict import NameConfl
 from string_parser.string_parser import StringParser
 
 
+# Applies each signup in a comma-separated command to the requested slot.
 class RegHandler:
     @staticmethod
     def handle(message: str, data: RegistrationData) -> (str, list[str] or None, str):
@@ -28,6 +29,7 @@ class RegHandler:
                     data.register_player(slot_label=slot_label, player=name)
                     response += f"{name} has been inserted into slot {slot_label}\n"
                 except NameConflictException as e:
+                    # The caller uses conflicts to offer a copyable deregistration command.
                     response += f"{repr(e)}\n"
                     conflict_names.append(name)
                 except Exception as e:

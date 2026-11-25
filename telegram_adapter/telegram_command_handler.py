@@ -23,6 +23,8 @@ import time
 from config import Config
 
 
+# Translates Telegram messages and button presses into application commands.
+# This layer also manages job scheduling, persistence and Telegram replies.
 class TelegramCommandHandler:
     time_manager: TimeManager = TimeManager(
         time_zone=Config.time_zone,
@@ -64,6 +66,7 @@ class TelegramCommandHandler:
 
     @staticmethod
     def initialize():
+        # Load the state before Telegram begins processing updates.
         TelegramCommandHandler.auto_reg_system.load_saved_state(
             data_handler=TelegramCommandHandler.data_handler,
             time_manager=TelegramCommandHandler.time_manager,
@@ -71,6 +74,7 @@ class TelegramCommandHandler:
 
     @staticmethod
     async def start_release_job(application: Application) -> None:
+        # Startup requeues the saved release even before anyone sends /start.
         if TelegramCommandHandler.auto_reg_system.release_time_manager.enabled:
             TelegramCommandHandler.run_job_for_release(application.job_queue)
 
@@ -133,6 +137,7 @@ class TelegramCommandHandler:
 
     @staticmethod
     async def attempt_delete_message(context: ContextTypes.DEFAULT_TYPE):
+        # Each tick consumes one queued (chat ID, message ID) pair.
         try:
             has_message_to_delete, (chat_id, message_id) = TelegramCommandHandler.deletion_queue.dequeue()
             if has_message_to_delete:
@@ -330,6 +335,7 @@ class TelegramCommandHandler:
         )
 
         callback_data = StringParser.remove_first_word(message=query_data)
+        # The slot-selection button is tied to the Telegram user who requested it.
         enforced_telegram_id = int(StringParser.get_first_word(message=callback_data))
         if enforced_telegram_id != sender.id:
             await TelegramCommandHandler.send_message(
@@ -404,6 +410,7 @@ class TelegramCommandHandler:
             await TelegramCommandHandler.run_av(update=Update(update_id=res.id, message=res), _=None)
             return
         elif TelegramCommandHandler.is_callback_data_rg(query_data=query.data):
+            # Route the button through /rg with the clicker's username for permission checks.
             slot_label = StringParser.get_last_word(message=query.data)
             message = f"/{Command.COMMAND_RG} {id_string} {slot_label}"
             res = await TelegramCommandHandler.send_message(
@@ -458,10 +465,11 @@ class TelegramCommandHandler:
             parse_mode: ParseMode or None = None,
             is_main_data: bool = True,
     ):
+        # Save the update before awaiting Telegram so delivery delays cannot defer persistence.
         TelegramCommandHandler.write_data_to_files()
         all_slots_as_string = TelegramCommandHandler.auto_reg_system.get_all_slots_as_string(is_main_data=is_main_data)
 
-        # sends all slots to chat
+        # Registration buttons belong to the active list. Scheduled releases post to the default chat.
         new_chat_id = None
         new_message_id = None
         inline_buttons: InlineKeyboardMarkup = TelegramCommandHandler.make_inline_buttons_for_registration(
@@ -497,7 +505,7 @@ class TelegramCommandHandler:
                 reply_markup=inline_buttons
             )
 
-        # inform message
+        # A separate reply carries the command result or release announcement.
         if message is not None:
             await TelegramCommandHandler.reply_message(
                 update=update,
@@ -510,7 +518,7 @@ class TelegramCommandHandler:
                 parse_mode=parse_mode
             )
 
-        # delete previous message
+        # Queue the old active list message for deletion after posting its replacement.
         if is_main_data:
             if TelegramCommandHandler.last_chat_id is not None and TelegramCommandHandler.last_message_id is not None:
                 TelegramCommandHandler.delete_message(
@@ -637,6 +645,7 @@ class TelegramCommandHandler:
     @staticmethod
     async def run_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
         system = TelegramCommandHandler.auto_reg_system
+        # Staging a list can make the weekly pre-release reset eligible earlier than the current timer.
         previous_check = system.next_release_check()
         (message, is_in_main_group) = system.handle_new(
             username=update.effective_user.username,
@@ -670,6 +679,7 @@ class TelegramCommandHandler:
         system = TelegramCommandHandler.auto_reg_system
         time_manager = TelegramCommandHandler.time_manager
         manager = system.release_time_manager
+        # A job already dispatched for a cancelled or replaced deadline can arrive late.
         if not manager.enabled or context.job.data != manager.release_time:
             return
 
@@ -683,9 +693,11 @@ class TelegramCommandHandler:
                     message="The list is now released!"
                 )
             else:
+                # A skipped weekly publication still needs its next deadline saved.
                 TelegramCommandHandler.write_data_to_files()
             return
 
+        # A reset and reminder can fall on the same tick. Process both before requeuing.
         is_reset = system.attempt_pre_release_reset(time_manager)
         is_reminder_updated, minutes_left = system.update_reminder(time_manager)
         TelegramCommandHandler.run_job_for_release(context.job_queue)
@@ -706,6 +718,7 @@ class TelegramCommandHandler:
     @staticmethod
     def run_job_for_release(job_queue: JobQueue) -> None:
         system = TelegramCommandHandler.auto_reg_system
+        # Keep one absolute timer for the next release-related action and replace it when state changes.
         TelegramCommandHandler.remove_jobs(name=Config.job_name_for_release, job_queue=job_queue)
         next_check = system.next_release_check()
         if next_check is not None:
@@ -737,6 +750,7 @@ class TelegramCommandHandler:
             mode=mode,
         )
         if changed:
+            # Update the timer and save the new schedule before confirming the command.
             TelegramCommandHandler.run_job_for_release(context.job_queue)
             TelegramCommandHandler.write_data_to_files()
         announce = (changed and system.release_time_manager.enabled and not ChatManager.is_chat_id_allowed(
@@ -770,6 +784,7 @@ class TelegramCommandHandler:
         message = TelegramCommandHandler.auto_reg_system.handle_reset(
             username=update.effective_user.username
         )
+        # Persist the cleared list before sending the reset confirmation.
         TelegramCommandHandler.write_data_to_files()
         await TelegramCommandHandler.reply_message(
             update=update,
@@ -877,6 +892,7 @@ class TelegramCommandHandler:
     async def run_lock(update: Update, _):
         TelegramCommandHandler.log_message_from_user(update=update)
 
+        # Both lock commands save their change before replying so a restart retains it.
         message = TelegramCommandHandler.auto_reg_system.handle_lock(username=update.effective_user.username)
         TelegramCommandHandler.write_data_to_files()
         await TelegramCommandHandler.reply_message(update=update, text=message)

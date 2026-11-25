@@ -2,6 +2,7 @@ from datetime import datetime
 from pytz.tzinfo import StaticTzInfo
 
 
+# Uses the configured timezone for command input, display and deadline comparisons.
 class TimeManager:
 
     def __init__(self, time_zone: StaticTzInfo, input_time_format: str, output_time_format: str):
@@ -30,6 +31,7 @@ class TimeManager:
             return None
 
     def datetime_to_str_with_input_time_format(self, datetime_val: datetime) -> str or None:
+        # Save dates in the same format the scheduler can parse on startup.
         try:
             return datetime_val.strftime(self._input_time_format)
         except Exception:

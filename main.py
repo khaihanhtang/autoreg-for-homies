@@ -12,6 +12,7 @@ def main() -> (Application[
     ExtBot[None], CallbackContext[ExtBot[None], dict, dict, dict], dict, dict, dict, JobQueue[
         CallbackContext[ExtBot[None], dict, dict, dict]]],
                logging.Logger):
+    # Load the saved state now. The post-init hook queues release work once Telegram is ready.
     TelegramCommandHandler.initialize()
 
     token: str = input("Enter bot token: ")
@@ -43,6 +44,7 @@ def main() -> (Application[
     to_be_returned_app.add_handler(
         CommandHandler(command=Command.COMMAND_NEW, callback=TelegramCommandHandler.run_new)
     )
+    # The release commands share one schedule, and /state reports the active mode.
     to_be_returned_app.add_handler(
         CommandHandler(command=Command.COMMAND_NOTITIME, callback=TelegramCommandHandler.run_notitime)
     )
@@ -97,6 +99,7 @@ def main() -> (Application[
     to_be_returned_app.add_handler(
         CommandHandler(command=Command.COMMAND_AKA, callback=TelegramCommandHandler.run_aka)
     )
+    # Register the catch-all after the named commands so it receives unrecognized commands.
     to_be_returned_app.add_handler(
         MessageHandler(filters=filters.COMMAND, callback=TelegramCommandHandler.run_command_not_found)
     )

@@ -1,6 +1,7 @@
 import json
 
 
+# Persists aliases by Telegram user ID in a separate file from registration state.
 class IdentityManager:
 
     def __init__(self, file_name_alias):
@@ -18,6 +19,7 @@ class IdentityManager:
         except Exception:
             loaded_id_to_alias: dict[str, str] = dict()
         res: dict[int, str] = dict()
+        # JSON object keys are strings. Lookups in the bot use integer Telegram IDs.
         for key, value in loaded_id_to_alias.items():
             res[int(key)] = value
         return res

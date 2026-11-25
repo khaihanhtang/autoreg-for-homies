@@ -5,6 +5,7 @@ class AvHandler:
 
     @staticmethod
     def handle(data: RegistrationData) -> RegistrationData:
+        # Build a view of slots with capacity left using the existing slot objects.
         res = RegistrationData()
         if data is None:
             return res
