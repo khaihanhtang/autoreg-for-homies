@@ -17,8 +17,8 @@ class Config:
 
     # variables for release time
     job_name_for_release: str = "release"  # used when creating job for the telegram bot to run before release
-    repeating_interval_for_release: float = 3  # number of seconds after every 2 consecutive repeats
     reminder_time_list: list[int] = [5]  # this is the list of numbers of minutes
+    pre_release_reset_minutes: int = 30  # Minutes before release to clear the active list and unlock. Set 0 to disable.
 
     # variables for deleting messages
     job_name_for_deleting: str = "delete"  # used when creating job for the telegram bot to run before deleting messages
@@ -33,4 +33,4 @@ class Config:
     file_name_main_list: str = "main_list.txt"
     file_name_release_time: str = "release_time.txt"
     file_name_pre_released_list: str = "pre_released_list.txt"
-    
+    file_name_state: str = "state.json"

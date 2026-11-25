@@ -1,3 +1,4 @@
+import json
 import os
 
 from auto_registration_system.data_structure.identity_manager import IdentityManager
@@ -9,7 +10,8 @@ class DataHandler:
 
     def __init__(self, directory_data: str,
                  file_name_log: str, file_name_history: str, file_name_alias: str, file_name_deletion_queue: str,
-                 file_name_main_list: str, file_name_release_time: str, file_name_pre_released_list: str):
+                 file_name_main_list: str, file_name_release_time: str, file_name_pre_released_list: str,
+                 file_name_state: str = "state.json"):
         if not os.path.isdir(directory_data):
             os.makedirs(directory_data)
         self._full_file_name_log: str = DataHandler.make_full_file_name(
@@ -40,50 +42,44 @@ class DataHandler:
             directory_data=directory_data,
             file_name=file_name_pre_released_list
         )
+        self._full_file_name_state = DataHandler.make_full_file_name(directory_data, file_name_state)
 
     @staticmethod
     def make_full_file_name(directory_data: str, file_name: str) -> str:
         return directory_data + "/" + file_name
 
-    def write_data_to_files(self, main_list_as_str: str, release_time_as_str: str, pre_released_list_as_str: str):
-        with open(file=self._full_file_name_main_list, mode="w", encoding="utf-8") as text_file:
-            if main_list_as_str is not None:
-                text_file.write(main_list_as_str)
-            else:
-                text_file.write("")
-        with open(file=self._full_file_name_release_time, mode="w", encoding="utf-8") as text_file:
-            if release_time_as_str is not None:
-                text_file.write(release_time_as_str)
-            else:
-                text_file.write("")
-        with open(file=self._full_file_name_pre_released_list, mode="w", encoding="utf-8") as text_file:
-            if pre_released_list_as_str is not None:
-                text_file.write(pre_released_list_as_str)
-            else:
-                text_file.write("")
+    def write_state(self, state: dict) -> None:
+        temporary_state_file = self._full_file_name_state + ".tmp"
+        with open(temporary_state_file, "w", encoding="utf-8") as file:
+            json.dump(state, file, ensure_ascii=False)
+            file.flush()
+            os.fsync(file.fileno())
+        os.replace(temporary_state_file, self._full_file_name_state)
 
-    def read_data_from_files(self) -> (str, str, str):
-        main_list_as_str: str | None = None
-        release_time_as_str: str | None = None
-        pre_released_list_as_str: str | None = None
+    def read_state(self) -> dict | None:
         try:
-            with open(file=self._full_file_name_main_list, mode="r", encoding="utf-8") as text_file:
-                main_list_as_str: str = text_file.read()
-        except Exception:
-            print(f"File {self._full_file_name_main_list} may not exist or error!")
+            with open(self._full_file_name_state, encoding="utf-8") as file:
+                state = json.load(file)
+        except FileNotFoundError:
+            return None
+        if not isinstance(state, dict):
+            raise ValueError(f"Invalid saved state in {self._full_file_name_state}")
+        return state
 
+    @staticmethod
+    def _read_legacy_text(file_name: str) -> str | None:
         try:
-            with open(file=self._full_file_name_release_time, mode="r", encoding="utf-8") as text_file:
-                release_time_as_str: str = text_file.read()
-        except Exception:
-            print(f"File {self._full_file_name_release_time} may not exist or error!")
+            with open(file_name, encoding="utf-8") as file:
+                return file.read()
+        except FileNotFoundError:
+            return None
 
-        try:
-            with open(file=self._full_file_name_pre_released_list, mode="r", encoding="utf-8") as text_file:
-                pre_released_list_as_str: str = text_file.read()
-        except Exception:
-            print(f"File {self._full_file_name_pre_released_list} may not exist or error!")
-        return main_list_as_str, release_time_as_str, pre_released_list_as_str
+    def read_legacy_state(self) -> tuple[str | None, str | None, str | None]:
+        return (
+            self._read_legacy_text(self._full_file_name_main_list),
+            self._read_legacy_text(self._full_file_name_release_time),
+            self._read_legacy_text(self._full_file_name_pre_released_list),
+        )
 
     def load_identity_manager(self) -> IdentityManager:
         return IdentityManager(file_name_alias=self._full_file_name_alias)

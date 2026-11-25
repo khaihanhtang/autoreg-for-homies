@@ -20,6 +20,8 @@ class Command:
     COMMAND_AKA = "aka"
     COMMAND_RESET = "reset"
     COMMAND_NOTITIME = "notitime"
+    COMMAND_WEEKLYNOTITIME = "weeklynotitime"
+    COMMAND_STATE = "state"
     COMMAND_RT = "rt"  # command functioning is not developed yet
     CALLBACK_DATA_HELP = f"_{COMMAND_HELP}"
     CALLBACK_DATA_ALL = f"_{COMMAND_ALL}"

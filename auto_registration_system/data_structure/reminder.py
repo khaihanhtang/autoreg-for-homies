@@ -1,6 +1,7 @@
+from datetime import datetime, timedelta
+
 from auto_registration_system.exception.error_maker import ErrorMaker
 from auto_registration_system.data_structure.time_manager import TimeManager
-from datetime import *
 
 
 class Reminder:
@@ -48,10 +49,15 @@ class Reminder:
                 time_manager=time_manager,
                 release_time=release_time
             )
-            while self._pointer < len(self._time_list) and minutes_left < float(self._time_list[self._pointer]):
+            while self._pointer < len(self._time_list) and minutes_left <= self._time_list[self._pointer]:
                 to_be_reminded_minutes_left = self._time_list[self._pointer]
                 self._pointer += 1
                 is_updated = True
         except Exception:
             pass
         return is_updated, to_be_reminded_minutes_left
+
+    def next_time(self, release_time: datetime) -> datetime:
+        if self._pointer < len(self._time_list):
+            return release_time - timedelta(minutes=self._time_list[self._pointer])
+        return release_time

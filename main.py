@@ -24,6 +24,7 @@ def main() -> (Application[
         .token(token)
         .read_timeout(60)
         .write_timeout(60)
+        .post_init(TelegramCommandHandler.start_release_job)
         .build()
     )
 
@@ -44,6 +45,12 @@ def main() -> (Application[
     )
     to_be_returned_app.add_handler(
         CommandHandler(command=Command.COMMAND_NOTITIME, callback=TelegramCommandHandler.run_notitime)
+    )
+    to_be_returned_app.add_handler(
+        CommandHandler(command=Command.COMMAND_WEEKLYNOTITIME, callback=TelegramCommandHandler.run_weeklynotitime)
+    )
+    to_be_returned_app.add_handler(
+        CommandHandler(command=Command.COMMAND_STATE, callback=TelegramCommandHandler.run_state)
     )
     to_be_returned_app.add_handler(
         CommandHandler(command=Command.COMMAND_RESET, callback=TelegramCommandHandler.run_reset)
