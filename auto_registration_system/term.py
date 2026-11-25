@@ -24,6 +24,14 @@ class Term:
         /{Command.COMMAND_AKA} [your new alias]
     7. To view your alias, use
         /{Command.COMMAND_AKA}
+    8. To check the lock, active list and release schedule, use
+        /{Command.COMMAND_STATE}
+
+    Admin release commands use Singapore time.
+        /{Command.COMMAND_NOTITIME} HH:MM:SS DD/MM/YYYY
+        /{Command.COMMAND_WEEKLYNOTITIME} HH:MM:SS DD/MM/YYYY
+    The weekly command sets the first release and repeats every 7 days.
+    Setting a release time switches to that command's mode. Send the active command without a time to turn it off.
         
     See detailed guide from the below link. 
     https://hackmd.io/@1UKfawZER96uwy_xohcquQ/B1fyW-c4R

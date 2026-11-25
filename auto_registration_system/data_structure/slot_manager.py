@@ -133,3 +133,20 @@ class SlotManager:
 
     def get_num_available(self) -> int:
         return self._num_players - len(self._players)
+
+    def to_state(self) -> dict:
+        return {
+            "name": self.slot_name,
+            "capacity": self.num_players,
+            "players": self.players,
+            "pending_reservations": self.pending_reservations,
+            "non_pending_reservations": self.non_pending_reservations,
+        }
+
+    @classmethod
+    def from_state(cls, state: dict) -> "SlotManager":
+        slot = cls(slot_name=state["name"], num_players=state["capacity"])
+        slot.players = list(state["players"])
+        slot.pending_reservations = list(state["pending_reservations"])
+        slot.non_pending_reservations = list(state["non_pending_reservations"])
+        return slot

@@ -13,6 +13,23 @@ class RegistrationData:
     def reset(self):
         self._bookings_by_date_venue = dict()
 
+    def to_state(self) -> dict:
+        return {
+            date_venue: {label: slot.to_state() for label, slot in slots.items()}
+            for date_venue, slots in self._bookings_by_date_venue.items()
+        }
+
+    @classmethod
+    def from_state(cls, state: dict | None) -> "RegistrationData | None":
+        if state is None:
+            return None
+        data = cls()
+        data._bookings_by_date_venue = {
+            date_venue: {label: SlotManager.from_state(slot) for label, slot in slots.items()}
+            for date_venue, slots in state.items()
+        }
+        return data
+
     def insert_date_venue(self, date_venue: str):
         if date_venue in self._bookings_by_date_venue:
             raise ErrorMaker.make_dv_conflict_exception(message=date_venue)

@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from typing import BinaryIO
 
 from telegram import MessageEntity
@@ -13,7 +14,7 @@ from auto_registration_system.data_structure.lock_manager import LockManager
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.data_structure.admin_manager import AdminManager
 from auto_registration_system.command_handler.handler_new import NewHandler
-from auto_registration_system.data_structure.release_time_manager import ReleaseTimeManager
+from auto_registration_system.data_structure.release_time_manager import ReleaseMode, ReleaseTimeManager
 from auto_registration_system.exception.error_maker import ErrorMaker
 from auto_registration_system.exception.exception_syntax_error import SyntaxErrorException
 from auto_registration_system.term import Term
@@ -35,6 +36,9 @@ class AutoRegistrationSystem:
         self._lock_manager: LockManager = LockManager(locked=False)
         self._identity_manager: IdentityManager = identity_manager
         self._release_time_manager: ReleaseTimeManager = ReleaseTimeManager()
+        self._reset_reminder(time_manager)
+
+    def _reset_reminder(self, time_manager: TimeManager) -> None:
         self._reminder: Reminder = Reminder(
             time_list=Config.reminder_time_list,
             time_manager=time_manager,
@@ -42,18 +46,54 @@ class AutoRegistrationSystem:
         )
 
     def attempt_release_data(self, time_manager: TimeManager) -> bool:
-        if self._release_time_manager.is_releasable(time_manager=time_manager):
+        if not self._release_time_manager.is_releasable(time_manager):
+            return False
+        publish = self._release_time_manager.mode == ReleaseMode.ONCE or self._pre_released_data is not None
+        if publish:
             self._data = self._pre_released_data
             self._pre_released_data = None
-            self._release_time_manager.disable()
-            return True
-        return False
+        self._release_time_manager.complete_release(time_manager)
+        self._reset_reminder(time_manager)
+        return publish
 
     def update_reminder(self, time_manager: TimeManager) -> (bool, int):
-        return self._reminder.update_pointer(
+        is_updated, minutes_left = self._reminder.update_pointer(
             time_manager=time_manager,
             release_time=self._release_time_manager.release_time
         )
+        if self._release_time_manager.mode == ReleaseMode.WEEKLY and self._pre_released_data is None:
+            return False, -1
+        return is_updated, minutes_left
+
+    def next_release_check(self) -> datetime | None:
+        release_time = self._release_time_manager.release_time
+        if release_time is None:
+            return None
+        reminder_or_release = self._reminder.next_time(release_time)
+        reset_time = self._pre_release_reset_time()
+        return min(reminder_or_release, reset_time) if reset_time is not None else reminder_or_release
+
+    def _pre_release_reset_time(self) -> datetime | None:
+        manager = self._release_time_manager
+        if manager.release_time is None or manager.pre_release_reset_done or Config.pre_release_reset_minutes <= 0:
+            return None
+        if manager.mode == ReleaseMode.WEEKLY and self._pre_released_data is None:
+            return None
+        return manager.release_time - timedelta(minutes=Config.pre_release_reset_minutes)
+
+    def attempt_pre_release_reset(self, time_manager: TimeManager) -> bool:
+        reset_time = self._pre_release_reset_time()
+        release_time = self._release_time_manager.release_time
+        if reset_time is None or not reset_time <= time_manager.now() < release_time:
+            return False
+        self._reset_active_list()
+        self._lock_manager.locked = False
+        self._release_time_manager.pre_release_reset_done = True
+        return True
+
+    def restore_release_schedule(self, saved_schedule: str | None, time_manager: TimeManager) -> None:
+        self._release_time_manager.restore(saved_schedule, time_manager)
+        self._reset_reminder(time_manager)
 
     @property
     def release_time_manager(self) -> ReleaseTimeManager:
@@ -69,7 +109,7 @@ class AutoRegistrationSystem:
 
     @staticmethod
     def convert_registrations_to_string(data: RegistrationData or None) -> str or None:
-        if data is None:
+        if data is None or not data.bookings_by_date_venue:
             return None
         res = ""
         for date_venue_name, date_venue_data in data.bookings_by_date_venue.items():
@@ -95,8 +135,12 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e)
 
-        self._data.reset()
+        self._reset_active_list()
         return "The entire list has been deleted!"
+
+    def _reset_active_list(self) -> None:
+        if self._data is not None:
+            self._data.reset()
 
     def handle_all(self, username: str, chat_id: int):
         try:
@@ -114,14 +158,9 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e), is_in_main_group
 
-        temp_data = RegistrationData()
         try:
-            response = NewHandler.handle(
-                message=message,
-                data=temp_data,
-                max_num_players=Config.max_num_players_per_slot
-            )
-            if response:
+            temp_data = self._parse_list(message)
+            if temp_data is not None:
                 if is_in_main_group:
                     self._data = temp_data
                 else:
@@ -131,26 +170,52 @@ class AutoRegistrationSystem:
         except Exception as e:
             return repr(e), is_in_main_group
 
-    def handle_notitime(self, username: str, message: str, time_manager: TimeManager) -> (bool, str):
+    @staticmethod
+    def _parse_list(message: str | None) -> RegistrationData | None:
+        if not message:
+            return None
+        data = RegistrationData()
+        if NewHandler.handle(message=message, data=data, max_num_players=Config.max_num_players_per_slot):
+            return data
+        return None
+
+    def handle_notitime(self, username: str, message: str, time_manager: TimeManager,
+                        mode: ReleaseMode = ReleaseMode.ONCE) -> tuple[bool, str]:
+        manager = self._release_time_manager
         try:
             self._admin_manager.enforce_admin(username=username)
-            message = StringParser.remove_command(message=message)
-            self._release_time_manager.set_release_time(
-                new_release_time=time_manager.str_to_datetime(message),
-                time_manager=time_manager
-            )
-            self._reminder = Reminder(
-                time_list=Config.reminder_time_list,
-                time_manager=time_manager,
-                release_time=self._release_time_manager.release_time
-            )
-            if not self.release_time_manager.enabled:
-                return False, f"❌ Release time hasn't been set!"
-            return True, f"✅ New list will be released after {time_manager.datetime_to_str(
-                self._release_time_manager.release_time
-            )}"
+            args = message.split()
+            if args and args[0].startswith("/"):
+                args = args[1:]
+            if not args:
+                if manager.mode != mode:
+                    return False, f"/{mode} is already off."
+                manager.disable()
+                self._reset_reminder(time_manager)
+                return True, f"/{mode} is now off."
+
+            release_time = time_manager.str_to_datetime(" ".join(args))
+            if release_time is None:
+                return False, f"Use /{mode} HH:MM:SS DD/MM/YYYY in Singapore time."
+            manager.set_release_time(release_time, time_manager, mode)
+            self._reset_reminder(time_manager)
+            scheduled_time = manager.release_time_to_str(time_manager)
+            if mode == ReleaseMode.WEEKLY:
+                return True, f"✅ Weekly releases start on {scheduled_time} and repeat every 7 days."
+            return True, f"✅ New list will be released on {scheduled_time}."
         except Exception as e:
             return False, repr(e)
+
+    def handle_state(self, time_manager: TimeManager) -> str:
+        lock_status = "locked" if self._lock_manager.locked else "unlocked"
+        has_list = self._data is not None and bool(self._data.bookings_by_date_venue)
+        list_status = "has information" if has_list else "is empty"
+        manager = self._release_time_manager
+        state = f"System is {lock_status}.\nActive list {list_status}."
+        if not manager.enabled:
+            return f"{state}\nRelease schedule is off."
+        return (f"{state}\n/{manager.mode} is active.\n"
+                f"Next release on {manager.release_time_to_str(time_manager)}.")
 
     def get_all_slots_as_string(self, is_main_data: bool = True) -> str or None:
         data = self._data
@@ -167,13 +232,26 @@ class AutoRegistrationSystem:
         return res
 
     def write_all_data_to_files(self, data_handler: DataHandler, time_manager: TimeManager):
-        data_handler.write_data_to_files(
-            main_list_as_str=self.get_all_slots_as_string(is_main_data=True),
-            release_time_as_str=self._release_time_manager.release_time_to_str_with_input_time_format(
-                time_manager=time_manager
-            ),
-            pre_released_list_as_str=self.get_all_slots_as_string(is_main_data=False)
-        )
+        data_handler.write_state({
+            "locked": self._lock_manager.locked,
+            "active_list": self._data.to_state() if self._data is not None else None,
+            "staged_list": self._pre_released_data.to_state() if self._pre_released_data is not None else None,
+            "release_schedule": self._release_time_manager.serialize(time_manager),
+        })
+
+    def load_saved_state(self, data_handler: DataHandler, time_manager: TimeManager) -> None:
+        state = data_handler.read_state()
+        if state is None:
+            active_list, release_schedule, staged_list = data_handler.read_legacy_state()
+            self._data = self._parse_list(active_list)
+            self._pre_released_data = self._parse_list(staged_list)
+            self._lock_manager.locked = False
+        else:
+            self._data = RegistrationData.from_state(state["active_list"])
+            self._pre_released_data = RegistrationData.from_state(state["staged_list"])
+            self._lock_manager.locked = state["locked"]
+            release_schedule = state["release_schedule"]
+        self.restore_release_schedule(release_schedule, time_manager)
 
     def handle_register(self, command_string_for_suggestion: str, username: str, message: str, chat_id: int) \
             -> (str, str or None):
