@@ -23,6 +23,7 @@ class Command:
     # Release controls and the current state summary.
     COMMAND_NOTITIME = "notitime"
     COMMAND_WEEKLYNOTITIME = "weeklynotitime"
+    COMMAND_TESTNOTITIME = "testnotitime"
     COMMAND_STATE = "state"
     COMMAND_RT = "rt"  # command functioning is not developed yet
     CALLBACK_DATA_HELP = f"_{COMMAND_HELP}"

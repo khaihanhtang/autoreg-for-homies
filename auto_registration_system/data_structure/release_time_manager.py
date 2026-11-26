@@ -9,10 +9,20 @@ from auto_registration_system.exception.error_maker import ErrorMaker
 class ReleaseMode(StrEnum):
     ONCE = Command.COMMAND_NOTITIME
     WEEKLY = Command.COMMAND_WEEKLYNOTITIME
+    TEST = Command.COMMAND_TESTNOTITIME
 
 
 WEEK = timedelta(days=7)
+TEST_INTERVAL = timedelta(minutes=5)
 PRE_RELEASE_RESET_DONE = "pre_release_reset_done"
+
+
+def recurrence_interval(mode: ReleaseMode | None) -> timedelta | None:
+    if mode == ReleaseMode.WEEKLY:
+        return WEEK
+    if mode == ReleaseMode.TEST:
+        return TEST_INTERVAL
+    return None
 
 
 # Tracks one active mode, its next deadline, and whether that occurrence has been prepared.
@@ -34,6 +44,10 @@ class ReleaseTimeManager:
     def enabled(self) -> bool:
         return self._mode is not None
 
+    @property
+    def recurring(self) -> bool:
+        return recurrence_interval(self._mode) is not None
+
     def disable(self) -> None:
         self._mode = None
         self._release_time = None
@@ -53,17 +67,21 @@ class ReleaseTimeManager:
         return self._release_time is not None and self._release_time <= time_manager.now()
 
     def complete_release(self, time_manager: TimeManager) -> None:
-        if self._mode == ReleaseMode.WEEKLY:
-            self._advance_weekly_release(time_manager.now())
+        if self.recurring:
+            self._advance_recurring_release(time_manager.now())
         else:
             self.disable()
 
-    def _advance_weekly_release(self, now: datetime) -> None:
+    def _advance_recurring_release(self, now: datetime) -> None:
         # Anchor recurrence to the scheduled deadline so late callbacks and downtime cannot shift it.
-        weeks_elapsed = (now - self._release_time) // WEEK
+        interval = recurrence_interval(self._mode)
+        if interval is None or self._release_time is None:
+            self.disable()
+            return
+        intervals_elapsed = (now - self._release_time) // interval
         self.pre_release_reset_done = False
         try:
-            self._release_time += (weeks_elapsed + 1) * WEEK
+            self._release_time += (intervals_elapsed + 1) * interval
         except OverflowError:
             self.disable()
 
@@ -71,9 +89,9 @@ class ReleaseTimeManager:
         return time_manager.datetime_to_str(datetime_val=self.release_time)
 
     def serialize(self, time_manager: TimeManager) -> str | None:
-        # A bare date is the legacy one-time format. Weekly mode adds a prefix and the reset marker has its own line.
+        # A bare date is the legacy one-time format. Recurring modes add a prefix.
         release_time = time_manager.datetime_to_str_with_input_time_format(self._release_time)
-        if self._mode == ReleaseMode.WEEKLY:
+        if self.recurring:
             release_time = f"{self._mode} {release_time}"
         if self.pre_release_reset_done:
             return f"{release_time}\n{PRE_RELEASE_RESET_DONE}"
@@ -83,18 +101,23 @@ class ReleaseTimeManager:
         self.disable()
         saved_schedule = (saved_schedule or "").strip()
         saved_schedule, _, saved_reset_status = saved_schedule.partition("\n")
-        weekly_prefix = f"{ReleaseMode.WEEKLY} "
-        weekly = saved_schedule.startswith(weekly_prefix)
-        release_time = time_manager.str_to_datetime(saved_schedule.removeprefix(weekly_prefix))
+        mode = ReleaseMode.ONCE
+        for recurring_mode in (ReleaseMode.WEEKLY, ReleaseMode.TEST):
+            prefix = f"{recurring_mode} "
+            if saved_schedule.startswith(prefix):
+                mode = recurring_mode
+                saved_schedule = saved_schedule.removeprefix(prefix)
+                break
+        release_time = time_manager.str_to_datetime(saved_schedule)
         if release_time is None:
             return
 
         now = time_manager.now()
-        # Expired one-time releases are dropped. Weekly schedules skip to the next future occurrence.
-        if not weekly and release_time <= now:
+        # Expired one-time releases are dropped. Recurring schedules skip missed occurrences.
+        if mode == ReleaseMode.ONCE and release_time <= now:
             return
-        self._mode = ReleaseMode.WEEKLY if weekly else ReleaseMode.ONCE
+        self._mode = mode
         self._release_time = release_time
         self.pre_release_reset_done = saved_reset_status == PRE_RELEASE_RESET_DONE
-        if weekly and release_time < now:
-            self._advance_weekly_release(now)
+        if self.recurring and release_time < now:
+            self._advance_recurring_release(now)

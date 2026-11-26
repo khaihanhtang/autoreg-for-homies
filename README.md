@@ -18,6 +18,8 @@ The setup of this bot may differ in different operating systems. This guide here
 
 Keep the same `data` directory when restarting. The bot saves the lock, active and staged lists, and release schedule together in `data/state.json`. On a first run without that file, it loads any existing list and schedule files. Earlier versions had no saved lock setting, so that first load starts unlocked.
 
+Admins can use `/testnotitime HH:MM:SS DD/MM/YYYY` to exercise the recurring release flow. It starts at the supplied Singapore time, repeats every 5 minutes, clears the active list and unlocks registration 2 minutes before release, and sends a reminder 1 minute before release. Like `/weeklynotitime`, a recurring occurrence only prepares and publishes when a replacement list has been staged.
+
 ## Acknowledgments
 
 OpenAI Codex provided AI coding assistance for the updates to `/notitime`, the addition of `/weeklynotitime` and `/state`, the configurable pre-release reset and unlock, and state recovery after a restart.

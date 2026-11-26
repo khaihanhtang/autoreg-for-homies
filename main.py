@@ -52,6 +52,9 @@ def main() -> (Application[
         CommandHandler(command=Command.COMMAND_WEEKLYNOTITIME, callback=TelegramCommandHandler.run_weeklynotitime)
     )
     to_be_returned_app.add_handler(
+        CommandHandler(command=Command.COMMAND_TESTNOTITIME, callback=TelegramCommandHandler.run_testnotitime)
+    )
+    to_be_returned_app.add_handler(
         CommandHandler(command=Command.COMMAND_STATE, callback=TelegramCommandHandler.run_state)
     )
     to_be_returned_app.add_handler(

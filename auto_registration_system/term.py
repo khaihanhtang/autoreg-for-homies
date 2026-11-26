@@ -31,7 +31,9 @@ class Term:
     Admin release commands use Singapore time.
         /{Command.COMMAND_NOTITIME} HH:MM:SS DD/MM/YYYY
         /{Command.COMMAND_WEEKLYNOTITIME} HH:MM:SS DD/MM/YYYY
+        /{Command.COMMAND_TESTNOTITIME} HH:MM:SS DD/MM/YYYY
     The weekly command sets the first release and repeats every 7 days.
+    The test command repeats every 5 minutes, clears and unlocks 2 minutes before release, and reminds 1 minute before release.
     Setting a release time switches to that command's mode. Send the active command without a time to turn it off.
         
     See detailed guide from the below link. 

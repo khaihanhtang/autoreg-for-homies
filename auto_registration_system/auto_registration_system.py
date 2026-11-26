@@ -40,8 +40,11 @@ class AutoRegistrationSystem:
         self._reset_reminder(time_manager)
 
     def _reset_reminder(self, time_manager: TimeManager) -> None:
+        reminder_times = (Config.test_reminder_time_list
+                          if self._release_time_manager.mode == ReleaseMode.TEST
+                          else Config.reminder_time_list)
         self._reminder: Reminder = Reminder(
-            time_list=Config.reminder_time_list,
+            time_list=reminder_times,
             time_manager=time_manager,
             release_time=self._release_time_manager.release_time
         )
@@ -49,7 +52,7 @@ class AutoRegistrationSystem:
     def attempt_release_data(self, time_manager: TimeManager) -> bool:
         if not self._release_time_manager.is_releasable(time_manager):
             return False
-        # If the staged list is absent, a weekly occurrence keeps the active list and advances the deadline.
+        # If the staged list is absent, a recurring occurrence keeps the active list and advances the deadline.
         publish = self._release_time_manager.mode == ReleaseMode.ONCE or self._pre_released_data is not None
         if publish:
             self._data = self._pre_released_data
@@ -63,7 +66,7 @@ class AutoRegistrationSystem:
             time_manager=time_manager,
             release_time=self._release_time_manager.release_time
         )
-        if self._release_time_manager.mode == ReleaseMode.WEEKLY and self._pre_released_data is None:
+        if self._release_time_manager.recurring and self._pre_released_data is None:
             return False, -1
         return is_updated, minutes_left
 
@@ -78,12 +81,15 @@ class AutoRegistrationSystem:
 
     def _pre_release_reset_time(self) -> datetime | None:
         manager = self._release_time_manager
-        if manager.release_time is None or manager.pre_release_reset_done or Config.pre_release_reset_minutes <= 0:
+        reset_minutes = (Config.test_pre_release_reset_minutes
+                         if manager.mode == ReleaseMode.TEST
+                         else Config.pre_release_reset_minutes)
+        if manager.release_time is None or manager.pre_release_reset_done or reset_minutes <= 0:
             return None
-        # A weekly reset becomes eligible once a replacement list is staged.
-        if manager.mode == ReleaseMode.WEEKLY and self._pre_released_data is None:
+        # A recurring reset becomes eligible once a replacement list is staged.
+        if manager.recurring and self._pre_released_data is None:
             return None
-        return manager.release_time - timedelta(minutes=Config.pre_release_reset_minutes)
+        return manager.release_time - timedelta(minutes=reset_minutes)
 
     def attempt_pre_release_reset(self, time_manager: TimeManager) -> bool:
         reset_time = self._pre_release_reset_time()
@@ -212,6 +218,8 @@ class AutoRegistrationSystem:
             scheduled_time = manager.release_time_to_str(time_manager)
             if mode == ReleaseMode.WEEKLY:
                 return True, f"✅ Weekly releases start on {scheduled_time} and repeat every 7 days."
+            if mode == ReleaseMode.TEST:
+                return True, f"✅ Test releases start on {scheduled_time} and repeat every 5 minutes."
             return True, f"✅ New list will be released on {scheduled_time}."
         except Exception as e:
             return False, repr(e)

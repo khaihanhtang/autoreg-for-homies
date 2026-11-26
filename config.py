@@ -21,6 +21,8 @@ class Config:
     job_name_for_release: str = "release"  # used when creating job for the telegram bot to run before release
     reminder_time_list: list[int] = [5]  # this is the list of numbers of minutes
     pre_release_reset_minutes: int = 30  # Minutes before release to clear the active list and unlock. Set 0 to disable.
+    test_reminder_time_list: list[int] = [1]
+    test_pre_release_reset_minutes: int = 2
 
     # variables for deleting messages
     job_name_for_deleting: str = "delete"  # used when creating job for the telegram bot to run before deleting messages

@@ -645,7 +645,7 @@ class TelegramCommandHandler:
     @staticmethod
     async def run_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
         system = TelegramCommandHandler.auto_reg_system
-        # Staging a list can make the weekly pre-release reset eligible earlier than the current timer.
+        # Staging a list can make a recurring pre-release reset eligible earlier than the current timer.
         previous_check = system.next_release_check()
         (message, is_in_main_group) = system.handle_new(
             username=update.effective_user.username,
@@ -693,7 +693,7 @@ class TelegramCommandHandler:
                     message="The list is now released!"
                 )
             else:
-                # A skipped weekly publication still needs its next deadline saved.
+                # A skipped recurring publication still needs its next deadline saved.
                 TelegramCommandHandler.write_data_to_files()
             return
 
@@ -770,6 +770,10 @@ class TelegramCommandHandler:
     @staticmethod
     async def run_weeklynotitime(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await TelegramCommandHandler.run_notitime(update, context, mode=ReleaseMode.WEEKLY)
+
+    @staticmethod
+    async def run_testnotitime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await TelegramCommandHandler.run_notitime(update, context, mode=ReleaseMode.TEST)
 
     @staticmethod
     async def run_state(update: Update, _):
