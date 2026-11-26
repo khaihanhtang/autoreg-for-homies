@@ -15,6 +15,7 @@ from auto_registration_system.data_structure.deletion_queue import DeletionQueue
 from auto_registration_system.data_structure.registration_data import RegistrationData
 from auto_registration_system.data_structure.release_time_manager import ReleaseMode
 from auto_registration_system.data_structure.time_manager import TimeManager
+from auto_registration_system.guide_language import TEXT
 from auto_registration_system.command import Command
 from auto_registration_system.term import Term
 from tracer import Tracer
@@ -967,20 +968,19 @@ class TelegramCommandHandler:
                 question, account_id=account_id, api_token=api_token, sender_name=sender_name,
                 get_active_list=get_active_list if is_registration_chat else None,
             )
-            sections = [escape(reply.message)] if reply.message else []
+            sections = [escape(reply.render(message)) for message in reply.messages]
             buttons = []
             for suggestion in reply.commands:
                 command = suggestion.command
                 section = f"<pre>{escape(command)}</pre>"
-                if suggestion.description:
-                    section += f"\n{escape(suggestion.description)}"
+                if suggestion.description is not None:
+                    section += f"\n{escape(reply.render(suggestion.description))}"
                 if suggestion.is_template:
-                    section += "\nReplace the placeholders before sending."
+                    section += f"\n{escape(reply.render(TEXT['replace_placeholders']))}"
                 sections.append(section)
 
                 if len(command) <= InlineKeyboardButtonLimit.MAX_COPY_TEXT:
-                    verb = command.split(maxsplit=1)[0]
-                    label = f"Copy {verb} template" if suggestion.is_template else f"Copy {verb}"
+                    label = reply.render(suggestion.button_label)
                     buttons.append([InlineKeyboardButton(label, copy_text=CopyTextButton(command))])
 
             await update.effective_message.reply_text(

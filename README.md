@@ -24,13 +24,15 @@ Admins can use `/testnotitime HH:MM:SS DD/MM/YYYY` to exercise the recurring rel
 
 ## AI command help
 
-`/ai [question]` suggests commands from the bot's built-in English guide and declines unrelated questions. Try `/ai tôi muốn vào danh sách slot a`. If your alias is Alex, the bot suggests `/rg Alex a`. For signup, reserve, and removal requests about yourself, the bot uses your `/aka` alias when set and your Telegram full name otherwise. You can supply a name explicitly. Use the **Copy** button and paste the command into Telegram. Fill in any placeholders in a template before sending it.
+`/ai [question]` suggests commands from the bot's built-in guide and declines unrelated questions. It replies in the language of your question when it can identify and support it, with English as the fallback. Command syntax and names stay intact. Try `/ai tôi muốn vào danh sách slot a`. If your alias is Alex, the bot suggests `/rg Alex a`. For signup, reserve, and removal requests about yourself, the bot uses your `/aka` alias when set and your Telegram full name otherwise. You can supply a name explicitly. Use the copy button and paste the command into Telegram. Fill in any placeholders in a template before sending it.
 
-In the registration group, you can also ask for a slot by name, such as `/ai tôi muốn vào slot có tên là Buổi tối`. The bot looks up the label from the active list. If the name matches several slots, check `/all` and use the label for the one you want.
+In the registration group, you can also ask for a slot by name, such as `/ai tôi muốn chơi buổi tối`. The bot looks up the label from the active list and can handle shortened names, reordered words, or small spelling errors. If the name matches several slots, check `/all` and use the label for the one you want.
+
+To leave an existing signup, try `/ai tôi muốn hủy đăng kí thì làm sao?` in the registration group. The bot checks your current name against the active list and offers a copyable `/drg` command for the matching slot. If you have several entries, choose which slot to leave.
 
 In the Cloudflare dashboard, open **Workers AI** and select **Use REST API**. Create a Workers AI API token and copy your account ID. Run `python main.py` in a terminal and enter both values after the Telegram bot token. The terminal hides the Workers AI token as you type. [Workers AI REST API setup](https://developers.cloudflare.com/workers-ai/get-started/rest-api/)
 
-`/ai` handles common requests in English and Vietnamese directly. It uses Gemma 4 26B on Cloudflare Workers AI for other wording. The Workers Free plan includes 10,000 Neurons of inference per day. [Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/)
+`/ai` handles common requests in English and Vietnamese directly, with built-in reply text in English, Vietnamese, and Chinese. It uses Gemma 4 26B on Cloudflare Workers AI for other wording and to translate the guide templates into other languages. The Workers Free plan includes 10,000 Neurons of inference per day. [Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/)
 
 ## Acknowledgments
 

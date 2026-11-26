@@ -3,102 +3,90 @@ import json
 import logging
 import re
 from collections.abc import Callable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import datetime
-from unicodedata import combining, normalize
+from unicodedata import normalize
 
 import httpx
 
 from auto_registration_system.command import Command
+from auto_registration_system.command_handler.handler_dereg import DeregHandler
 from auto_registration_system.data_structure.registration_data import RegistrationData
+from auto_registration_system.guide_language import GuideText, TEXT, fold_accents, question_language, validate_translations
 from auto_registration_system.term import Term
 from config import Config
+from string_parser.string_parser import StringParser
 
 
 @dataclass(frozen=True)
 class CommandSuggestion:
     command: str
-    description: str
+    description: GuideText | None = None
     is_template: bool = False
+    copy_label: GuideText | None = None
+
+    @property
+    def button_label(self) -> GuideText:
+        verb = self.command.split(maxsplit=1)[0]
+        return self.copy_label or TEXT["copy_template" if self.is_template else "copy_command"].with_values(verb)
 
 
 @dataclass(frozen=True)
 class GuideReply:
-    message: str = ""
+    messages: tuple[GuideText, ...] = ()
     commands: tuple[CommandSuggestion, ...] = ()
+    language: str | None = None
+    translations: dict[str, str] = field(default_factory=dict)
+
+    def render(self, text: GuideText) -> str:
+        return text.render(self.language or "en", self.translations)
 
 
+_COMMAND_TEMPLATES = {
+    "available_places": (Command.COMMAND_AV, ""),
+    "full_list": (Command.COMMAND_ALL, ""),
+    "register_players": (Command.COMMAND_RG, " NAME SLOT"),
+    "reserve_players": (Command.COMMAND_RS, " NAME SLOT"),
+    "deregister_players": (Command.COMMAND_DRG, " NAME SLOT"),
+    "view_alias": (Command.COMMAND_AKA, ""),
+    "set_alias": (Command.COMMAND_AKA, " ALIAS"),
+    "rename_existing_registration": (Command.COMMAND_ADMIN, ""),
+    "registration_status": (Command.COMMAND_STATE, ""),
+    "create_or_stage_list": (
+        Command.COMMAND_NEW, f"\n{Term.DATE_VENUE} DATE at VENUE\n[a] 18:00-19:00 {Term.NUM_PLAYERS} 4",
+    ),
+    "schedule_once": (Command.COMMAND_NOTITIME, " HH:MM:SS DD/MM/YYYY"),
+    "schedule_weekly": (Command.COMMAND_WEEKLYNOTITIME, " HH:MM:SS DD/MM/YYYY"),
+    "schedule_test": (Command.COMMAND_TESTNOTITIME, " HH:MM:SS DD/MM/YYYY"),
+    "cancel_once": (Command.COMMAND_NOTITIME, ""),
+    "cancel_weekly": (Command.COMMAND_WEEKLYNOTITIME, ""),
+    "cancel_test": (Command.COMMAND_TESTNOTITIME, ""),
+    "cancel_unknown_mode": (Command.COMMAND_STATE, ""),
+    "lock_registration": (Command.COMMAND_LOCK, ""),
+    "unlock_registration": (Command.COMMAND_UNLOCK, ""),
+    "reset_active_list": (Command.COMMAND_RESET, ""),
+    "promote_all_reserves": (Command.COMMAND_ALLPENDING, ""),
+    "activity_history": (Command.COMMAND_HISTORY, ""),
+    "admin_list": (Command.COMMAND_ADMIN, ""),
+    "request_admin_access": (Command.COMMAND_ADMIN, ""),
+    "command_help": (Command.COMMAND_HELP, ""),
+}
 _GUIDE = {
-    "available_places": CommandSuggestion(f"/{Command.COMMAND_AV}", "Shows open places in the registration group."),
-    "full_list": CommandSuggestion(f"/{Command.COMMAND_ALL}", "Shows all slots, players, and reserves."),
-    "register_players": CommandSuggestion(
-        f"/{Command.COMMAND_RG} NAME SLOT",
-        "Send in the registration group. Separate multiple names with commas. "
-        "If the slot is full, players join the pending waitlist and move up as places open.",
-        is_template=True,
-    ),
-    "reserve_players": CommandSuggestion(
-        f"/{Command.COMMAND_RS} NAME SLOT",
-        "Adds regular reserves in the registration group. An admin can move them into the lineup.",
-        is_template=True,
-    ),
-    "deregister_players": CommandSuggestion(
-        f"/{Command.COMMAND_DRG} NAME SLOT",
-        "Removes a player from the slot or its waitlist. You can also use the player's position in the lineup.",
-        is_template=True,
-    ),
-    "view_alias": CommandSuggestion(f"/{Command.COMMAND_AKA}", "Shows your current alias."),
-    "set_alias": CommandSuggestion(f"/{Command.COMMAND_AKA} ALIAS", "Sets your alias.", is_template=True),
-    "registration_status": CommandSuggestion(
-        f"/{Command.COMMAND_STATE}", "Shows whether registration is locked, whether the list has slots, and the next release."
-    ),
-    "create_or_stage_list": CommandSuggestion(
-        f"/{Command.COMMAND_NEW}\n{Term.DATE_VENUE} DATE at VENUE\n[a] 18:00-19:00 {Term.NUM_PLAYERS} 4",
-        "Admins can send this in the registration group to replace the active list or in a direct message to stage it.",
-        is_template=True,
-    ),
-    "schedule_once": CommandSuggestion(
-        f"/{Command.COMMAND_NOTITIME} HH:MM:SS DD/MM/YYYY",
-        "Schedules a one-time release. Admins should stage the list first and enter a future Singapore time.",
-        is_template=True,
-    ),
-    "schedule_weekly": CommandSuggestion(
-        f"/{Command.COMMAND_WEEKLYNOTITIME} HH:MM:SS DD/MM/YYYY",
-        "Schedules a weekly release. Admins should stage the list first and enter a future Singapore time.",
-        is_template=True,
-    ),
-    "schedule_test": CommandSuggestion(
-        f"/{Command.COMMAND_TESTNOTITIME} HH:MM:SS DD/MM/YYYY",
-        "Schedules test releases every 5 minutes. Admins should stage the list first and enter a future Singapore time.",
-        is_template=True,
-    ),
-    "cancel_once": CommandSuggestion(f"/{Command.COMMAND_NOTITIME}", "Turns off the one-time release schedule. Admin only."),
-    "cancel_weekly": CommandSuggestion(f"/{Command.COMMAND_WEEKLYNOTITIME}", "Turns off the weekly schedule. Admin only."),
-    "cancel_test": CommandSuggestion(f"/{Command.COMMAND_TESTNOTITIME}", "Turns off the test schedule. Admin only."),
-    "cancel_unknown_mode": CommandSuggestion(
-        f"/{Command.COMMAND_STATE}", "Check the active release mode first. An admin can cancel it by sending that scheduling command by itself."
-    ),
-    "lock_registration": CommandSuggestion(f"/{Command.COMMAND_LOCK}", "Locks registration. Admin only."),
-    "unlock_registration": CommandSuggestion(f"/{Command.COMMAND_UNLOCK}", "Opens registration. Admin only."),
-    "reset_active_list": CommandSuggestion(f"/{Command.COMMAND_RESET}", "Clears the active list. Admin only."),
-    "promote_all_reserves": CommandSuggestion(
-        f"/{Command.COMMAND_ALLPENDING}",
-        "Moves all regular reserves onto the pending waitlist and fills open places. Admin only.",
-    ),
-    "activity_history": CommandSuggestion(f"/{Command.COMMAND_HISTORY}", "Retrieves the activity history. Admin only."),
-    "admin_list": CommandSuggestion(f"/{Command.COMMAND_ADMIN}", "Shows who the admins are."),
-    "command_help": CommandSuggestion(f"/{Command.COMMAND_HELP}", "Shows the bot's command guide."),
+    command_id: CommandSuggestion(f"/{verb}{arguments}", TEXT[command_id], is_template=bool(arguments))
+    for command_id, (verb, arguments) in _COMMAND_TEMPLATES.items()
 }
 _PLAYER_FORMS = {"register_players", "reserve_players", "deregister_players"}
 _SCHEDULE_FORMS = {"schedule_once", "schedule_weekly", "schedule_test"}
+_SLOT_NAME_CONNECTORS = {"cua", "of", "the"}
+_MAX_GUIDE_COMMANDS = 3
 
 # Match complete requests for common commands before asking the model to interpret other wording.
 _SELF_PLAYER_REQUESTS = {
     "register_players": (
         r"register me|sign me up|put me on (?:the )?(?:list|waitlist)|"
-        r"(?:i (?:want|would like) to )?(?:register|sign up|join(?: the (?:list|waitlist))?)|"
-        r"(?:(?:toi|minh|em) )?muon (?:vao(?: danh sach(?: cho)?)?|dang k[yi])|"
-        r"cho (?:toi|minh|em) vao(?: danh sach(?: cho)?)?|dang k[yi](?: cho (?:toi|minh|em))?"
+        r"(?:i (?:want|would like) to )?(?:register|sign up|play|join(?: the (?:list|waitlist))?)|"
+        r"(?:(?:toi|minh|em) )?muon (?:choi|vao(?: danh sach(?: cho)?)?|dang k[yi])|"
+        r"cho (?:toi|minh|em) vao(?: danh sach(?: cho)?)?|(?:(?:toi|minh|em) )?dang k[yi](?: cho (?:toi|minh|em))?"
     ),
     "reserve_players": (
         r"reserve (?:me|a spot for me)|add me (?:to|as) (?:the |a )?(?:reserve(?: list)?|regular reserve)|"
@@ -106,12 +94,12 @@ _SELF_PLAYER_REQUESTS = {
         r"cho (?:toi|minh|em) (?:lam du bi|vao danh sach du bi)"
     ),
     "deregister_players": (
-        r"remove me(?: from (?:the )?(?:list|waitlist))?|deregister me|cancel my (?:signup|registration)|"
+        r"remove me(?: from (?:the )?(?:list|waitlist))?|deregister me|cancel my (?:sign[ -]?up|registration|reservation)|"
         r"(?:i (?:want|would like) to )?(?:deregister|leave)|"
         r"(?:(?:toi|minh|em) )?(?:muon )?(?:huy dang k[yi]|rut ten(?: toi|minh|em)?|xoa ten (?:toi|minh|em))"
     ),
 }
-_READ_REQUESTS = {
+_GUIDE_REQUESTS = {
     "available_places": (
         r"show (?:me )?(?:available|open) (?:slots|places|spots)|what slots are available|"
         r"(?:lam sao de )?xem (?:cac )?(?:khung gio|slot|suat) con cho"
@@ -119,6 +107,23 @@ _READ_REQUESTS = {
     "full_list": r"show (?:me )?(?:the )?(?:full |current )?list|xem danh sach(?: hien tai)?",
     "registration_status": r"is registration locked|when is the next release|(?:xem )?trang thai dang k[yi]",
     "view_alias": r"what(?:'s| is) my alias|show my alias|xem (?:biet danh|aka)(?: cua toi)?",
+    "set_alias": (
+        r"(?:how (?:do|can) i |how to )?(?:set|change|update) my alias|"
+        r"(?:(?:lam sao(?: de)?|cach) )?(?:dat|doi|sua) (?:biet danh|aka)(?: cua (?:toi|minh|em))?"
+    ),
+    "rename_existing_registration": (
+        r"(?:how (?:do|can) i |how to )?(?:change|edit|fix|correct) (?:my |the )?name "
+        r"(?:after (?:signing up|registering)|(?:in|on) (?:the )?"
+        r"(?:(?:(?:active|current|registration|signup|sign-up) )?(?:list|roster)|slot [^\W_]+))|"
+        r"(?:how (?:do|can) i |how to )?rename my (?:signup|registration)|"
+        r"(?:(?:lam sao(?: de)?|cach) )?(?:doi|sua|thay doi) ten(?: (?:cua )?(?:minh|toi|em))? "
+        r"(?:da dang k[yi]|(?:trong|tren) (?:danh sach(?: (?:minh |toi )?(?:da )?dang k[yi])?|slot(?: [^\W_]+)?))"
+    ),
+    "admin_list": r"who (?:are the (?:bot )?admins|is (?:the )?(?:bot )?admin)|(?:ai la|xem danh sach) admin(?: cua bot)?",
+    "request_admin_access": (
+        r"(?:how (?:do|can) i |how to )?(?:become (?:a |an )?(?:bot )?admin|(?:get|request) (?:bot )?admin (?:access|rights))|"
+        r"(?:(?:lam sao(?: de)?|cach) )?(?:lam|tro thanh|duoc lam) admin(?: (?:cua )?bot)?"
+    ),
 }
 _SLOT_KEYWORD = r"\s+(?:slot|khung(?: gi[ờo])?|su[ấa]t)\s+"
 _SLOT_LABEL_AT_END = re.compile(
@@ -126,32 +131,55 @@ _SLOT_LABEL_AT_END = re.compile(
     re.IGNORECASE,
 )
 _SLOT_NAME_AT_END = re.compile(
-    _SLOT_KEYWORD + r"(?:(?:c[óo] t[êe]n(?: l[àa])?|t[êe]n(?: l[àa])?|named|called)\s+)?(.+?)(?:\s+please)?$",
+    _SLOT_KEYWORD + r"(?:(?:c[óo] t[êe]n(?: l[àa])?|t[êe]n(?: l[àa])?|named|called|[ởo]|at)\s+)?(.+?)(?:\s+please)?$",
+    re.IGNORECASE,
+)
+_SLOT_LOCATION_AT_END = re.compile(r"\s+(?:[ởo]|at)\s+(.+)$", re.IGNORECASE)
+_VIETNAMESE_PLAY_AT_SLOT = (
+    r"(?:(?:toi|minh|em) )?(?:muon )?(?:(?:vao|tham gia) )?"
+    r"(?:danh cau(?: long)?|choi(?: cau(?: long)?)?)(?: voi (?:nhau|moi nguoi|cac ban)| cung nhau)?"
+)
+_WANT_TO_PLAY = re.compile(
+    r"(?:i (?:want|would like) to play|(?:(?:t[ôo]i|m[ìi]nh|em) )?mu[ốo]n ch[ơo]i) (.+)",
     re.IGNORECASE,
 )
 _EXPLICIT_NAMES = re.compile(
     r"\s+(?:with the name|under the name|với tên|tên là)\s+(.+?)(?:\s+(?:for|in|to|from|into|vào|khỏi|ở))?$",
     re.IGNORECASE,
 )
+_VIETNAMESE_HOW_AT_END = re.compile(
+    r"\s+(?:th[ìi] )?(?:ph[ảa]i )?l[àa]m (?:sao|th[ếe] n[àa]o)$", re.IGNORECASE,
+)
 
 _INSTRUCTIONS = (
-    "Select up to three command IDs for the user's question about the Homies badminton Telegram bot. "
+    f"Select up to {_MAX_GUIDE_COMMANDS} command IDs for the user's question about the Homies badminton Telegram bot. "
+    "Identify the language of the user's own question and return its two-letter ISO 639-1 code in language. "
+    "Use en for ambiguous questions. Ignore Telegram command names, player names, and slot titles when identifying language. "
     "The question may be in Vietnamese or another language. Use command_help for a general request for bot help. "
     "Return an empty commands list for unrelated questions, even if they mention a bot command. "
     "Use check commands for live information. "
-    "For register_players, reserve_players and deregister_players, put the slot label or full slot name first in args, "
+    "Use rename_existing_registration when the question asks to change a name already on the list. "
+    "Use set_alias when the question asks to change the stored alias for future commands. "
+    "Use request_admin_access for becoming a bot admin and admin_list for finding existing admins. "
+    "Choose only entries that directly answer the question. "
+    "Use register_players when the user asks how to join a badminton game at a named place. "
+    "For register_players, reserve_players and deregister_players, put the slot label or the slot or venue name "
+    "as the user wrote it first in args, "
     "then each explicitly named player or deregistration position as a separate string. Set use_sender to true "
     "when the sender wants to act for themselves without supplying their name. The bot fills in that name locally. "
     "For example, 'register Alex in slot a' gives args [\"a\", \"Alex\"] and use_sender false. "
     "'tôi muốn vào danh sách slot a' gives args [\"a\"] and use_sender true. "
     "For 'join the slot named Evening Session', use args [\"Evening Session\"] and use_sender true. "
     "If the slot is missing, use empty args and still set use_sender for a request about the sender. "
+    "For a request to cancel the sender's signup without a slot, choose deregister_players with empty args "
+    "and use_sender true so the bot can find their current signup. "
     "A phrase such as 'a slot' gives no label. Use use_sender false for commands other than these three. "
     "For set_alias use one alias, and for schedule commands use one complete HH:MM:SS DD/MM/YYYY value. "
     "Copy argument values verbatim from the question. Use empty args when the command has no parameters. "
     "If the user wants to cancel a release and the mode is unclear, "
     "select cancel_unknown_mode. The available commands are:\n"
-    + "\n".join(f"{command_id}: {guide.command} - {guide.description}" for command_id, guide in _GUIDE.items())
+    + "\n".join(f"{command_id}: {guide.command} - {TEXT[command_id].render('en', {})}"
+                for command_id, guide in _GUIDE.items())
 )
 _RESPONSE_FORMAT = {
     "type": "json_schema",
@@ -161,6 +189,7 @@ _RESPONSE_FORMAT = {
         "schema": {
             "type": "object",
             "properties": {
+                "language": {"type": "string", "description": "Two-letter language code, or en if uncertain"},
                 "commands": {
                     "type": "array",
                     "items": {
@@ -175,27 +204,65 @@ _RESPONSE_FORMAT = {
                     },
                 },
             },
-            "required": ["commands"],
+            "required": ["language", "commands"],
             "additionalProperties": False,
         },
     },
 }
-_OUT_OF_SCOPE = GuideReply("That question is outside this bot's scope. I can help with badminton registration commands.")
-_UNAVAILABLE = GuideReply("I can only help with using this registration bot. AI help is unavailable right now.")
-_BUSY = GuideReply("AI help is busy. Try again later.")
+_TRANSLATION_FORMAT = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "bot_guide_translations",
+        "strict": True,
+        "schema": {
+            "type": "object",
+            "properties": {"translations": {"type": "array", "items": {"type": "string"}}},
+            "required": ["translations"],
+            "additionalProperties": False,
+        },
+    },
+}
+_OUT_OF_SCOPE = GuideReply((TEXT["outside_scope"],))
+_UNAVAILABLE = GuideReply((TEXT["unavailable"],))
+_BUSY = GuideReply((TEXT["busy"],))
 _MAX_QUESTION_LENGTH = 600
 _REQUEST_SLOTS = asyncio.Semaphore(3)
 _LOGGER = logging.getLogger(__name__)
+_RESPONSE_ERRORS = (httpx.RequestError, TimeoutError, IndexError, KeyError, TypeError, ValueError)
 
 
-def _fold_accents(text: str) -> str:
-    folded = normalize("NFD", text.casefold().replace("đ", "d"))
-    return "".join(char for char in folded if not combining(char))
+def _slot_name_words(text: str) -> list[str]:
+    words = re.findall(r"[^\W_]+", fold_accents(text))
+    return [word for word in words if word not in _SLOT_NAME_CONNECTORS]
+
+
+def _one_letter_off(word: str, title_word: str) -> bool:
+    if min(len(word), len(title_word)) < 3 or not (word.isalpha() and title_word.isalpha()):
+        return False
+
+    first_difference = next(
+        (index for index, (a, b) in enumerate(zip(word, title_word)) if a != b),
+        min(len(word), len(title_word)),
+    )
+    tail, title_tail = word[first_difference:], title_word[first_difference:]
+    if len(tail) == len(title_tail):
+        return bool(tail) and tail[1:] == title_tail[1:]
+    return tail[1:] == title_tail or tail == title_tail[1:]
+
+
+def _slot_name_has_small_typos(reference: list[str], title: list[str]) -> bool:
+    if len(reference) != len(title):
+        return False
+    differences = [(word, title_word) for word, title_word in zip(reference, title) if word != title_word]
+    # Keep at least one exact word and at most two one-letter errors in the full name.
+    return 0 < len(differences) <= 2 and len(differences) < len(title) and all(
+        _one_letter_off(word, title_word) for word, title_word in differences
+    )
 
 
 def _resolve_slot_label(
         reference: str, active_list: RegistrationData | None, *, by_name: bool,
-) -> str | CommandSuggestion:
+) -> str | CommandSuggestion | None:
     label = reference.lower()
     is_label = label.isalnum() and label.islower()
     if not by_name and is_label and (active_list is None or active_list.get_slot(label) is not None):
@@ -206,19 +273,82 @@ def _resolve_slot_label(
     names = [(label, slot, normalize("NFC", " ".join(slot.slot_name.casefold().split()))) for label, slot in slots]
     matches = [(label, slot) for label, slot, name in names if name == reference]
     if not matches:
-        folded_reference = _fold_accents(reference)
-        matches = [(label, slot) for label, slot, name in names if _fold_accents(name) == folded_reference]
+        folded_reference = fold_accents(reference)
+        matches = [(label, slot) for label, slot, name in names if fold_accents(name) == folded_reference]
+    if not matches:
+        reference_words = _slot_name_words(reference)
+        if len(reference_words) > 1:
+            candidates = [(label, slot, _slot_name_words(name)) for label, slot, name in names]
+            sorted_reference = sorted(reference_words)
+            matches = [(label, slot) for label, slot, words in candidates if sorted(words) == sorted_reference]
+            if not matches:
+                # Require a complete phrase in the title before matching a shortened name.
+                phrase = " ".join(reference_words)
+                matches = [(label, slot) for label, slot, words in candidates if f" {phrase} " in f" {' '.join(words)} "]
+            if not matches:
+                matches = [
+                    (label, slot) for label, slot, words in candidates
+                    if _slot_name_has_small_typos(reference_words, words)
+                ]
 
+    if not matches:
+        return None
     if active_list is not None and len(matches) == 1:
         matched_label, matched_slot = matches[0]
         # Regular commands resolve a label to its first slot. Only suggest it if it points to the matching slot.
         if active_list.get_slot(matched_label) is matched_slot:
             return matched_label
-    explanation = (
-        "Several active slots share that name or label. Check the list in the registration group."
-        if matches else "I couldn't find that slot. Check the active list in the registration group."
+    return replace(
+        _GUIDE["full_list"],
+        description=TEXT["multiple_matching_slots"],
     )
-    return replace(_GUIDE["full_list"], description=explanation)
+
+
+def _player_sender_name(sender_name: str | None) -> str | None:
+    if (sender_name and sender_name.isprintable() and "," not in sender_name
+            and any(letter.isalpha() for letter in sender_name)):
+        return " ".join(sender_name.split())
+    return None
+
+
+def _build_player_command(
+        command_id: str, slot: str, names: list[str], sender_name: str | None,
+) -> CommandSuggestion:
+    suggestion = _GUIDE[command_id]
+    if any("," in name or (not any(letter.isalpha() for letter in name)
+                           and not (command_id == "deregister_players" and name.isdecimal() and int(name) > 0))
+           for name in names):
+        return suggestion
+    if name := _player_sender_name(sender_name):
+        names = [name, *names]
+    verb = suggestion.command.split(maxsplit=1)[0]
+    command = f"{verb} {', '.join(names) or 'NAME'} {slot or 'SLOT'}"
+    return replace(suggestion, command=command, is_template=not (names and slot))
+
+
+def _deregister_my_signup(sender_name: str | None, active_list: RegistrationData | None) -> GuideReply | None:
+    name = _player_sender_name(sender_name)
+    if name is None or active_list is None:
+        return None
+
+    lookup_name = StringParser.split_names(name)[0]
+    slots = DeregHandler.search_for_slots_able_to_be_deregistered(lookup_name, active_list)
+    if not slots:
+        return GuideReply((TEXT["no_signup"],), (_GUIDE["full_list"],))
+    if any(active_list.get_slot(label) is not slot for label, slot in slots):
+        return GuideReply((TEXT["shared_slot_label"],), (_GUIDE["full_list"],))
+    if len(slots) > _MAX_GUIDE_COMMANDS:
+        return GuideReply((TEXT["many_signups"],), (_GUIDE["full_list"],))
+
+    commands = tuple(
+        replace(
+            _build_player_command("deregister_players", label, [], name),
+            description=TEXT["leave_slot"].with_values(label, slot.slot_name),
+            copy_label=TEXT["copy_leave_slot"].with_values(f"/{Command.COMMAND_DRG}", label),
+        )
+        for label, slot in slots
+    )
+    return GuideReply((TEXT["choose_slot"],) if len(commands) > 1 else (), commands)
 
 
 def _build_command(
@@ -236,22 +366,16 @@ def _build_command(
            for value in values):
         return suggestion
 
-    verb = suggestion.command.split(maxsplit=1)[0]
     if command_id in _PLAYER_FORMS:
         slot = _resolve_slot_label(values[0], active_list, by_name=slot_by_name) if values else ""
+        if slot is None:
+            return replace(_GUIDE["full_list"], description=TEXT["unknown_slot"])
         if isinstance(slot, CommandSuggestion):
             return slot
-        names = values[1:]
-        if any("," in name or (not any(letter.isalpha() for letter in name)
-                               and not (command_id == "deregister_players" and name.isdecimal() and int(name) > 0))
-               for name in names):
-            return suggestion
-        if (sender_name and sender_name.isprintable() and "," not in sender_name
-                and any(letter.isalpha() for letter in sender_name)):
-            names.insert(0, " ".join(sender_name.split()))
-        command = f"{verb} {', '.join(names) or 'NAME'} {slot or 'SLOT'}"
-        return replace(suggestion, command=command, is_template=not (names and slot))
-    elif command_id == "set_alias" and len(values) == 1 and not any(mark in values[0] for mark in ",@"):
+        return _build_player_command(command_id, slot, values[1:], sender_name)
+
+    verb = suggestion.command.split(maxsplit=1)[0]
+    if command_id == "set_alias" and len(values) == 1 and not any(mark in values[0] for mark in ",@"):
         command = f"{verb} {values[0]}"
     elif command_id in _SCHEDULE_FORMS and len(values) == 1:
         try:
@@ -264,26 +388,45 @@ def _build_command(
     return replace(suggestion, command=command, is_template=False)
 
 
+def _reply_for_command(
+        command_id: str, args: list[str], question: str, *, sender_name: str | None,
+        active_list: RegistrationData | None, slot_by_name: bool = False,
+) -> GuideReply:
+    if command_id == "deregister_players" and not args:
+        reply = _deregister_my_signup(sender_name, active_list)
+        if reply is not None:
+            return reply
+    suggestion = _build_command(
+        command_id, args, question, sender_name=sender_name,
+        active_list=active_list, slot_by_name=slot_by_name,
+    )
+    return GuideReply(commands=(suggestion,))
+
+
 def _local_reply(
         question: str, sender_name: str | None, active_list: RegistrationData | None = None,
 ) -> GuideReply | None:
     text = normalize("NFC", " ".join(question.split())).rstrip(" ?!.？！。")
-    full_intent = _fold_accents(text)
-    for command_id, pattern in _READ_REQUESTS.items():
+    text = _VIETNAMESE_HOW_AT_END.sub("", text)
+    full_intent = fold_accents(text)
+    for command_id, pattern in _GUIDE_REQUESTS.items():
         if re.fullmatch(pattern, full_intent):
             return GuideReply(commands=(_GUIDE[command_id],))
 
     label_match = _SLOT_LABEL_AT_END.search(text)
-    name_match = _SLOT_NAME_AT_END.search(text) if label_match is None else None
+    name_match = (_SLOT_NAME_AT_END.search(text) or _SLOT_LOCATION_AT_END.search(text)) if label_match is None else None
     slot_match = label_match or name_match
     intent = text[:slot_match.start()] if slot_match else text
     explicit_names = _EXPLICIT_NAMES.search(intent) if slot_match else None
     if explicit_names:
         intent = intent[:explicit_names.start()]
-    intent = _fold_accents(intent)
+    intent = fold_accents(intent)
     for command_id, pattern in _SELF_PLAYER_REQUESTS.items():
+        if command_id == "register_players" and name_match:
+            pattern += f"|{_VIETNAMESE_PLAY_AT_SLOT}"
         if re.fullmatch(
-                rf"(?:(?:can|could|would) you (?:help )?)?(?:please )?(?:{pattern})"
+                r"(?:(?:can|could|would) you (?:help )?|how (?:do|can) i |how to |(?:lam sao|lam the nao) de |cach )?"
+                rf"(?:please )?(?:{pattern})"
                 r"(?: (?:for|in|to|from|into|vao|khoi|o))?(?: the)?",
                 intent,
         ):
@@ -296,27 +439,62 @@ def _local_reply(
             if explicit_names:
                 args.extend(explicit_names.group(1).split(","))
                 sender_name = None
-            suggestion = _build_command(
+            return _reply_for_command(
                 command_id, args, question, sender_name=sender_name,
                 active_list=active_list, slot_by_name=name_match is not None,
             )
+
+    if active_list is not None and (play_request := _WANT_TO_PLAY.fullmatch(text)):
+        slot = _resolve_slot_label(play_request.group(1).strip('"“”'), active_list, by_name=True)
+        if slot is not None:
+            suggestion = _build_player_command("register_players", slot, [], sender_name) if isinstance(slot, str) else slot
             return GuideReply(commands=(suggestion,))
 
     return None
 
 
-async def answer_bot_question(
+async def _request_completion(
+        *, account_id: str, api_token: str, system_prompt: str, content: str,
+        response_format: dict, max_completion_tokens: int = 512,
+) -> dict:
+    async with _REQUEST_SLOTS, asyncio.timeout(15), httpx.AsyncClient(timeout=15.0) as client:
+        response = await client.post(
+            f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_token}"},
+            json={
+                "model": "@cf/google/gemma-4-26b-a4b-it",
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": content},
+                ],
+                "max_completion_tokens": max_completion_tokens,
+                "temperature": 0,
+                "chat_template_kwargs": {"enable_thinking": False},
+                "response_format": response_format,
+                "store": False,
+            },
+        )
+        response.raise_for_status()
+    choice = response.json()["choices"][0]
+    if choice["finish_reason"] != "stop":
+        raise ValueError("Incomplete guide response")
+    result = json.loads(choice["message"]["content"])
+    if not isinstance(result, dict):
+        raise ValueError("Invalid guide response")
+    return result
+
+
+async def _select_reply(
         question: str, *, account_id: str, api_token: str, sender_name: str | None = None,
         get_active_list: Callable[[], RegistrationData | None] | None = None,
 ) -> GuideReply:
-    question = question.strip()
     if not question:
         return GuideReply(
-            "Ask how to use the bot. Questions that need AI are sent to Cloudflare Workers AI.",
-            (CommandSuggestion(f"/{Command.COMMAND_AI} How do I see available slots?", ""),),
+            (TEXT["usage"],),
+            (CommandSuggestion(f"/{Command.COMMAND_AI} How do I see available slots?"),),
         )
     if len(question) > _MAX_QUESTION_LENGTH:
-        return GuideReply(f"Keep your question to {_MAX_QUESTION_LENGTH} characters or fewer.")
+        return GuideReply((TEXT["question_length"].with_values(_MAX_QUESTION_LENGTH),))
 
     local_reply = _local_reply(question, sender_name, get_active_list() if get_active_list else None)
     if local_reply is not None:
@@ -324,49 +502,82 @@ async def answer_bot_question(
     if _REQUEST_SLOTS.locked():
         return _BUSY
 
+    language = None
     try:
-        async with _REQUEST_SLOTS, asyncio.timeout(15), httpx.AsyncClient(timeout=15.0) as client:
-            response = await client.post(
-                f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {api_token}"},
-                json={
-                    "model": "@cf/google/gemma-4-26b-a4b-it",
-                    "messages": [
-                        {"role": "system", "content": _INSTRUCTIONS},
-                        {"role": "user", "content": question},
-                    ],
-                    "max_completion_tokens": 512,
-                    "temperature": 0,
-                    "chat_template_kwargs": {"enable_thinking": False},
-                    "response_format": _RESPONSE_FORMAT,
-                    "store": False,
-                },
-            )
-            response.raise_for_status()
-        choice = response.json()["choices"][0]
-        commands = json.loads(choice["message"]["content"])["commands"]
-        if choice["finish_reason"] != "stop" or not isinstance(commands, list) or len(commands) > 3:
+        result = await _request_completion(
+            account_id=account_id, api_token=api_token, system_prompt=_INSTRUCTIONS,
+            content=question, response_format=_RESPONSE_FORMAT,
+        )
+        if isinstance(result.get("language"), str) and re.fullmatch("[a-z]{2}", result["language"].lower()):
+            language = result["language"].lower()
+        commands = result["commands"]
+        if not isinstance(commands, list) or len(commands) > _MAX_GUIDE_COMMANDS:
             raise ValueError("Invalid guide response")
         if not commands:
-            return _OUT_OF_SCOPE
+            return replace(_OUT_OF_SCOPE, language=language)
 
         active_list = get_active_list() if get_active_list else None
         suggestions = {}
+        messages = []
         for item in commands:
             command_id, args, use_sender = item["id"], item["args"], item["use_sender"]
             if (command_id not in _GUIDE or not isinstance(args, list) or not isinstance(use_sender, bool)
                     or any(not isinstance(arg, str) for arg in args)):
                 raise ValueError("Invalid guide command")
-            suggestion = _build_command(
+            reply = _reply_for_command(
                 command_id, args, question, sender_name=sender_name if use_sender else None,
                 active_list=active_list,
             )
-            suggestions.setdefault(suggestion.command, suggestion)
-        return GuideReply(commands=tuple(suggestions.values()))
+            messages.extend(reply.messages)
+            for suggestion in reply.commands:
+                suggestions.setdefault(suggestion.command, suggestion)
+        return GuideReply(tuple(dict.fromkeys(messages)), tuple(suggestions.values()), language=language)
     except httpx.HTTPStatusError as error:
         if error.response.status_code == 429:
             return _BUSY
         _LOGGER.warning("Cloudflare Workers AI guide request returned HTTP %s", error.response.status_code)
-    except (httpx.RequestError, TimeoutError, IndexError, KeyError, TypeError, ValueError) as error:
+    except _RESPONSE_ERRORS as error:
         _LOGGER.warning("Cloudflare Workers AI guide request failed (%s)", type(error).__name__)
-    return _UNAVAILABLE
+    return replace(_UNAVAILABLE, language=language)
+
+
+async def answer_bot_question(
+        question: str, *, account_id: str, api_token: str, sender_name: str | None = None,
+        get_active_list: Callable[[], RegistrationData | None] | None = None,
+) -> GuideReply:
+    question = question.strip()
+    reply = await _select_reply(
+        question, account_id=account_id, api_token=api_token, sender_name=sender_name,
+        get_active_list=get_active_list,
+    )
+    language = reply.language or question_language(question)
+    if language in {"en", "vi", "zh"}:
+        return replace(reply, language=language)
+    if _REQUEST_SLOTS.locked():
+        return replace(reply, language="en")
+
+    text = list(reply.messages)
+    for suggestion in reply.commands:
+        if suggestion.description is not None:
+            text.append(suggestion.description)
+        text.append(suggestion.button_label)
+    if any(suggestion.is_template for suggestion in reply.commands):
+        text.append(TEXT["replace_placeholders"])
+    # Translate the built-in templates before inserting any names, slot titles, or commands.
+    templates = list(dict.fromkeys(item.english for item in text))
+    try:
+        result = await _request_completion(
+            account_id=account_id, api_token=api_token,
+            system_prompt=(
+                "Translate each English template into the language identified by the supplied two-letter code. "
+                "Keep the template order, meaning, and numbered placeholders such as {0} exactly. "
+                "Only return translations of the supplied text."
+            ),
+            content=json.dumps({"language": language, "templates": templates}),
+            response_format=_TRANSLATION_FORMAT, max_completion_tokens=1024,
+        )
+        translations = validate_translations(templates, result["translations"])
+        return replace(reply, language=language, translations=translations)
+    except (httpx.HTTPStatusError, *_RESPONSE_ERRORS) as error:
+        _LOGGER.warning("Cloudflare Workers AI guide translation failed (%s)", type(error).__name__)
+        return replace(reply, language="en")
