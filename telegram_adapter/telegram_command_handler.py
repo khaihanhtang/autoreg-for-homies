@@ -1,11 +1,14 @@
+from collections.abc import Awaitable, Callable
+from html import escape
 from http.client import responses
 
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, \
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, CopyTextButton, ReplyKeyboardMarkup, \
     ReplyKeyboardRemove, ForceReply, User, Message, CallbackQuery
-from telegram.constants import MessageEntityType, ParseMode
+from telegram.constants import InlineKeyboardButtonLimit, MessageEntityType, ParseMode
 from telegram.ext import Application, ContextTypes, JobQueue
 
 from auto_registration_system.auto_registration_system import AutoRegistrationSystem
+from auto_registration_system.bot_guide import answer_bot_question
 from auto_registration_system.command_handler.handler_dereg import DeregHandler
 from auto_registration_system.data_structure.chat_manager import ChatManager
 from auto_registration_system.data_structure.deletion_queue import DeletionQueue
@@ -946,6 +949,47 @@ class TelegramCommandHandler:
                 update=update,
                 text=repr(e)
             )
+
+    @staticmethod
+    def make_ai_callback(
+            *, account_id: str, api_token: str,
+    ) -> Callable[[Update, ContextTypes.DEFAULT_TYPE], Awaitable[None]]:
+        def get_active_list() -> RegistrationData | None:
+            return TelegramCommandHandler.auto_reg_system.data
+
+        async def run_ai(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+            question = " ".join(context.args or ())
+            user = update.effective_user
+            sender_name = TelegramCommandHandler.get_id_string_from_telegram_user(user) if user and not user.is_bot else None
+            chat_id = update.effective_message.chat_id
+            is_registration_chat = ChatManager.is_chat_id_allowed(chat_id, Config.allowed_chat_ids)
+            reply = await answer_bot_question(
+                question, account_id=account_id, api_token=api_token, sender_name=sender_name,
+                get_active_list=get_active_list if is_registration_chat else None,
+            )
+            sections = [escape(reply.message)] if reply.message else []
+            buttons = []
+            for suggestion in reply.commands:
+                command = suggestion.command
+                section = f"<pre>{escape(command)}</pre>"
+                if suggestion.description:
+                    section += f"\n{escape(suggestion.description)}"
+                if suggestion.is_template:
+                    section += "\nReplace the placeholders before sending."
+                sections.append(section)
+
+                if len(command) <= InlineKeyboardButtonLimit.MAX_COPY_TEXT:
+                    verb = command.split(maxsplit=1)[0]
+                    label = f"Copy {verb} template" if suggestion.is_template else f"Copy {verb}"
+                    buttons.append([InlineKeyboardButton(label, copy_text=CopyTextButton(command))])
+
+            await update.effective_message.reply_text(
+                text="\n\n".join(sections),
+                parse_mode=ParseMode.HTML,
+                reply_markup=InlineKeyboardMarkup(buttons) if buttons else None,
+            )
+
+        return run_ai
 
     @staticmethod
     async def run_help(update: Update, _):

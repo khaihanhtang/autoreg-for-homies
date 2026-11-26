@@ -1,12 +1,13 @@
+import logging
+import re
+from getpass import getpass
+
 from telegram.ext import (ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, Application, ExtBot,
                           CallbackContext, JobQueue)
 from telegram.ext import filters
 
 from telegram_adapter.telegram_command_handler import TelegramCommandHandler
 from auto_registration_system.command import Command
-
-import logging
-
 
 def main() -> (Application[
     ExtBot[None], CallbackContext[ExtBot[None], dict, dict, dict], dict, dict, dict, JobQueue[
@@ -16,6 +17,12 @@ def main() -> (Application[
     TelegramCommandHandler.initialize()
 
     token: str = input("Enter bot token: ")
+    cloudflare_account_id = ""
+    while not re.fullmatch(r"[0-9a-fA-F]{32}", cloudflare_account_id):
+        cloudflare_account_id = input("Enter Cloudflare account ID (32 hex characters): ").strip()
+    cloudflare_api_token = ""
+    while not cloudflare_api_token:
+        cloudflare_api_token = getpass("Enter Cloudflare Workers AI API token (required): ").strip()
     print(f"Please remember to run command /{Command.COMMAND_START}")
 
     to_be_returned_logger: logging.Logger = logging.getLogger(__name__)
@@ -95,6 +102,15 @@ def main() -> (Application[
     )
     to_be_returned_app.add_handler(
         CommandHandler(command=Command.COMMAND_HELP, callback=TelegramCommandHandler.run_help)
+    )
+    to_be_returned_app.add_handler(
+        CommandHandler(
+            command=Command.COMMAND_AI,
+            callback=TelegramCommandHandler.make_ai_callback(
+                account_id=cloudflare_account_id, api_token=cloudflare_api_token,
+            ),
+            block=False,
+        )
     )
     to_be_returned_app.add_handler(
         CommandHandler(command=Command.COMMAND_HISTORY, callback=TelegramCommandHandler.run_history)

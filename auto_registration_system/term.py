@@ -27,6 +27,9 @@ class Term:
         /{Command.COMMAND_AKA}
     8. To check the lock, active list and release schedule, use
         /{Command.COMMAND_STATE}
+    9. To ask how to use the bot, try
+        /{Command.COMMAND_AI} How do I see available slots?
+       Questions that need AI are sent to Cloudflare Workers AI.
 
     Admin release commands use Singapore time.
         /{Command.COMMAND_NOTITIME} HH:MM:SS DD/MM/YYYY

@@ -17,6 +17,7 @@ class Command:
     COMMAND_LOCK = "lock"
     COMMAND_UNLOCK = "unlock"
     COMMAND_HELP = "help"
+    COMMAND_AI = "ai"
     COMMAND_HISTORY = "history"
     COMMAND_AKA = "aka"
     COMMAND_RESET = "reset"
