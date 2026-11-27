@@ -99,6 +99,11 @@ _SELF_PLAYER_REQUESTS = {
         r"(?:(?:toi|minh|em) )?(?:muon )?(?:huy dang k[yi]|rut ten(?: toi|minh|em)?|xoa ten (?:toi|minh|em))"
     ),
 }
+_PLAYER_REQUEST_PATTERN = (
+    r"(?:(?:can|could|would) you (?:help )?|how (?:do|can) i |how to |(?:lam sao|lam the nao) de |cach )?"
+    r"(?:please )?(?:{})"
+    r"(?: (?:for|in|to|from|into|vao|khoi|o))?(?: the)?"
+)
 _GUIDE_REQUESTS = {
     "available_places": (
         r"show (?:me )?(?:available|open) (?:slots|places|spots)|what slots are available|"
@@ -126,8 +131,15 @@ _GUIDE_REQUESTS = {
     ),
 }
 _SLOT_KEYWORD = r"\s+(?:slot|khung(?: gi[ờo])?|su[ấa]t)\s+"
+_SLOT_LABEL = _SLOT_KEYWORD + r"(?:\[([^\W_]+)\]|([^\W_]+))"
 _SLOT_LABEL_AT_END = re.compile(
-    _SLOT_KEYWORD + r"(?:\[([^\W_]+)\]|([^\W_]+))(?:\s+please)?$",
+    _SLOT_LABEL + r"(?:\s+please)?$",
+    re.IGNORECASE,
+)
+_WITH_COMPANIONS = r"\s+c[ùu]ng\s+(?:v[ớo]i\s+|(?!v[ớo]i\b))"
+_COMPANIONS_AFTER_LABEL = re.compile(_SLOT_LABEL + _WITH_COMPANIONS + r"(?P<names>.+)$", re.IGNORECASE)
+_COMPANIONS_BEFORE_SIGNUP = re.compile(
+    _WITH_COMPANIONS + r"(?P<names>.+?)(?P<signup>\s+[đd][ăa]ng k[ýíyi](?: v[àa]o)?)$",
     re.IGNORECASE,
 )
 _SLOT_NAME_AT_END = re.compile(
@@ -403,6 +415,31 @@ def _reply_for_command(
     return GuideReply(commands=(suggestion,))
 
 
+def _companion_signup_args(
+        text: str, label_match: re.Match[str] | None, active_list: RegistrationData | None,
+) -> list[str] | None:
+    if label_match:
+        prefix = text[:label_match.start()]
+        before_signup = _COMPANIONS_BEFORE_SIGNUP.search(prefix)
+        if before_signup is None:
+            return None
+        intent = prefix[:before_signup.start()] + before_signup["signup"]
+        names = before_signup["names"]
+    else:
+        label_match = _COMPANIONS_AFTER_LABEL.search(text)
+        if label_match is None:
+            return None
+        # A slot title can also contain “cùng”. Require a real label when the list is visible.
+        if active_list is not None and active_list.get_slot((label_match[1] or label_match[2]).lower()) is None:
+            return None
+        intent = text[:label_match.start()]
+        names = label_match["names"]
+
+    if re.fullmatch(_PLAYER_REQUEST_PATTERN.format(_SELF_PLAYER_REQUESTS["register_players"]), fold_accents(intent)):
+        return [label_match[1] or label_match[2], *names.split(",")]
+    return None
+
+
 def _local_reply(
         question: str, sender_name: str | None, active_list: RegistrationData | None = None,
 ) -> GuideReply | None:
@@ -414,6 +451,10 @@ def _local_reply(
             return GuideReply(commands=(_GUIDE[command_id],))
 
     label_match = _SLOT_LABEL_AT_END.search(text)
+    if companion_args := _companion_signup_args(text, label_match, active_list):
+        return _reply_for_command(
+            "register_players", companion_args, question, sender_name=sender_name, active_list=active_list,
+        )
     name_match = (_SLOT_NAME_AT_END.search(text) or _SLOT_LOCATION_AT_END.search(text)) if label_match is None else None
     slot_match = label_match or name_match
     intent = text[:slot_match.start()] if slot_match else text
@@ -424,12 +465,7 @@ def _local_reply(
     for command_id, pattern in _SELF_PLAYER_REQUESTS.items():
         if command_id == "register_players" and name_match:
             pattern += f"|{_VIETNAMESE_PLAY_AT_SLOT}"
-        if re.fullmatch(
-                r"(?:(?:can|could|would) you (?:help )?|how (?:do|can) i |how to |(?:lam sao|lam the nao) de |cach )?"
-                rf"(?:please )?(?:{pattern})"
-                r"(?: (?:for|in|to|from|into|vao|khoi|o))?(?: the)?",
-                intent,
-        ):
+        if re.fullmatch(_PLAYER_REQUEST_PATTERN.format(pattern), intent):
             if label_match:
                 args = [label_match.group(1) or label_match.group(2)]
             elif name_match:
